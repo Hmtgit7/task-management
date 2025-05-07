@@ -1,4 +1,3 @@
-// frontend/src/services/apiService.ts
 import axios, { AxiosRequestConfig, AxiosError, AxiosResponse } from "axios";
 
 // Create axios instance
@@ -7,6 +6,7 @@ const api = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
+  timeout: 15000, // 15 second timeout
 });
 
 // Request interceptor for adding auth token
@@ -31,6 +31,7 @@ api.interceptors.request.use(
     return config;
   },
   (error) => {
+    console.error("Request interceptor error:", error);
     return Promise.reject(error);
   }
 );
@@ -50,12 +51,21 @@ api.interceptors.response.use(
         typeof window !== "undefined" &&
         !window.location.pathname.includes("/login")
       ) {
+        console.log("Unauthorized access, redirecting to login");
         // Clear storage and redirect to login
         localStorage.removeItem("token");
         localStorage.removeItem("user");
         window.location.href = "/login?session=expired";
       }
     }
+
+    // Log the error for debugging
+    console.error(
+      "API Error:",
+      error.response?.status,
+      error.message,
+      originalRequest?.url
+    );
 
     return Promise.reject(error);
   }
@@ -64,18 +74,47 @@ api.interceptors.response.use(
 // Authentication API
 export const authAPI = {
   register: async (userData: any) => {
-    const response = await api.post("/auth/register", userData);
-    return response.data;
+    try {
+      const response = await api.post("/auth/register", userData);
+
+      // Store token in localStorage upon successful registration
+      if (response.data.token) {
+        localStorage.setItem("token", response.data.token);
+        localStorage.setItem("user", JSON.stringify(response.data.user));
+      }
+
+      return response.data;
+    } catch (error) {
+      console.error("Register error:", error);
+      throw error;
+    }
   },
 
   login: async (credentials: any) => {
-    const response = await api.post("/auth/login", credentials);
-    return response.data;
+    try {
+      const response = await api.post("/auth/login", credentials);
+
+      // Store token in localStorage upon successful login
+      if (response.data.token) {
+        localStorage.setItem("token", response.data.token);
+        localStorage.setItem("user", JSON.stringify(response.data.user));
+      }
+
+      return response.data;
+    } catch (error) {
+      console.error("Login error:", error);
+      throw error;
+    }
   },
 
   getCurrentUser: async () => {
-    const response = await api.get("/auth/me");
-    return response.data;
+    try {
+      const response = await api.get("/auth/me");
+      return response.data;
+    } catch (error) {
+      console.error("Get current user error:", error);
+      throw error;
+    }
   },
 
   logout: async () => {
@@ -87,99 +126,189 @@ export const authAPI = {
 // Tasks API
 export const tasksAPI = {
   getAllTasks: async (params: any = {}) => {
-    const response = await api.get("/tasks", { params });
-    return response.data;
+    try {
+      const response = await api.get("/tasks", { params });
+      return response.data;
+    } catch (error) {
+      console.error("Get all tasks error:", error);
+      throw error;
+    }
   },
 
   getTaskById: async (id: string) => {
-    const response = await api.get(`/tasks/${id}`);
-    return response.data;
+    try {
+      const response = await api.get(`/tasks/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error(`Get task ${id} error:`, error);
+      throw error;
+    }
   },
 
   createTask: async (taskData: any) => {
-    const response = await api.post("/tasks", taskData);
-    return response.data;
+    try {
+      const response = await api.post("/tasks", taskData);
+      return response.data;
+    } catch (error) {
+      console.error("Create task error:", error);
+      throw error;
+    }
   },
 
   updateTask: async (id: string, taskData: any) => {
-    const response = await api.put(`/tasks/${id}`, taskData);
-    return response.data;
+    try {
+      const response = await api.put(`/tasks/${id}`, taskData);
+      return response.data;
+    } catch (error) {
+      console.error(`Update task ${id} error:`, error);
+      throw error;
+    }
   },
 
   deleteTask: async (id: string) => {
-    const response = await api.delete(`/tasks/${id}`);
-    return response.data;
+    try {
+      const response = await api.delete(`/tasks/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error(`Delete task ${id} error:`, error);
+      throw error;
+    }
   },
 
   getAssignedTasks: async (params: any = {}) => {
-    const response = await api.get("/tasks/assigned", { params });
-    return response.data;
+    try {
+      const response = await api.get("/tasks/assigned", { params });
+      return response.data;
+    } catch (error) {
+      console.error("Get assigned tasks error:", error);
+      throw error;
+    }
   },
 
   getCreatedTasks: async (params: any = {}) => {
-    const response = await api.get("/tasks/created", { params });
-    return response.data;
+    try {
+      const response = await api.get("/tasks/created", { params });
+      return response.data;
+    } catch (error) {
+      console.error("Get created tasks error:", error);
+      throw error;
+    }
   },
 
   getOverdueTasks: async (params: any = {}) => {
-    const response = await api.get("/tasks/overdue", { params });
-    return response.data;
+    try {
+      const response = await api.get("/tasks/overdue", { params });
+      return response.data;
+    } catch (error) {
+      console.error("Get overdue tasks error:", error);
+      throw error;
+    }
   },
 
   getTasksDueToday: async (params: any = {}) => {
-    const response = await api.get("/tasks/due-today", { params });
-    return response.data;
+    try {
+      const response = await api.get("/tasks/due-today", { params });
+      return response.data;
+    } catch (error) {
+      console.error("Get tasks due today error:", error);
+      throw error;
+    }
   },
 };
 
 // Notifications API
 export const notificationsAPI = {
   getNotifications: async (params: any = {}) => {
-    const response = await api.get("/notifications", { params });
-    return response.data;
+    try {
+      const response = await api.get("/notifications", { params });
+      return response.data;
+    } catch (error) {
+      console.error("Get notifications error:", error);
+      throw error;
+    }
   },
 
   markAsRead: async (id: string) => {
-    const response = await api.put(`/notifications/${id}/read`);
-    return response.data;
+    try {
+      const response = await api.put(`/notifications/${id}/read`);
+      return response.data;
+    } catch (error) {
+      console.error(`Mark notification ${id} as read error:`, error);
+      throw error;
+    }
   },
 
   markAllAsRead: async () => {
-    const response = await api.put("/notifications/read-all");
-    return response.data;
+    try {
+      const response = await api.put("/notifications/read-all");
+      return response.data;
+    } catch (error) {
+      console.error("Mark all notifications as read error:", error);
+      throw error;
+    }
   },
 
   deleteNotification: async (id: string) => {
-    const response = await api.delete(`/notifications/${id}`);
-    return response.data;
+    try {
+      const response = await api.delete(`/notifications/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error(`Delete notification ${id} error:`, error);
+      throw error;
+    }
   },
 
   getPreferences: async () => {
-    const response = await api.get("/notifications/preferences");
-    return response.data;
+    try {
+      const response = await api.get("/notifications/preferences");
+      return response.data;
+    } catch (error) {
+      console.error("Get notification preferences error:", error);
+      throw error;
+    }
   },
 
   updatePreferences: async (preferences: any) => {
-    const response = await api.put("/notifications/preferences", preferences);
-    return response.data;
+    try {
+      const response = await api.put("/notifications/preferences", preferences);
+      return response.data;
+    } catch (error) {
+      console.error("Update notification preferences error:", error);
+      throw error;
+    }
   },
 };
 
 // Analytics API
 export const analyticsAPI = {
   getDashboardStats: async () => {
-    const response = await api.get("/analytics/dashboard");
-    return response.data;
+    try {
+      const response = await api.get("/analytics/dashboard");
+      return response.data;
+    } catch (error) {
+      console.error("Get dashboard stats error:", error);
+      throw error;
+    }
   },
 
   getUserAnalytics: async (params: any = {}) => {
-    const response = await api.get("/analytics/user", { params });
-    return response.data;
+    try {
+      const response = await api.get("/analytics/user", { params });
+      return response.data;
+    } catch (error) {
+      console.error("Get user analytics error:", error);
+      throw error;
+    }
   },
 
   getTaskCompletionAnalytics: async (params: any = {}) => {
-    const response = await api.get("/analytics/task-completion", { params });
-    return response.data;
+    try {
+      const response = await api.get("/analytics/task-completion", { params });
+      return response.data;
+    } catch (error) {
+      console.error("Get task completion analytics error:", error);
+      throw error;
+    }
   },
 };
 

@@ -1,9 +1,9 @@
 const Task = require("../models/Task");
 const User = require("../models/User");
+const Notification = require("../models/Notification");
 const asyncHandler = require("../middleware/async");
 const mongoose = require("mongoose");
 const ErrorResponse = require("../utils/errorResponse");
-const Notification = require("../models/Notification");
 
 // @desc    Get task completion analytics
 // @route   GET /api/analytics/task-completion
@@ -323,79 +323,93 @@ exports.getUserAnalytics = asyncHandler(async (req, res, next) => {
 exports.getDashboardStats = asyncHandler(async (req, res, next) => {
   const userId = req.user.id;
 
-  // Task counts for the user
-  const assignedTasksCount = await Task.countDocuments({ assignedTo: userId });
-  const createdTasksCount = await Task.countDocuments({ createdBy: userId });
-  const overdueTasksCount = await Task.countDocuments({
-    assignedTo: userId,
-    dueDate: { $lt: new Date() },
-    status: { $ne: "completed" },
-  });
-
-  // Tasks due today
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
-
-  const tasksDueToday = await Task.countDocuments({
-    assignedTo: userId,
-    dueDate: { $gte: today, $lt: tomorrow },
-    status: { $ne: "completed" },
-  });
-
-  // Recent assigned tasks
-  const recentAssignedTasks = await Task.find({ assignedTo: userId })
-    .sort("-createdAt")
-    .limit(5)
-    .populate({
-      path: "createdBy",
-      select: "name",
+  try {
+    // Task counts for the user
+    const assignedTasksCount = await Task.countDocuments({
+      assignedTo: userId,
+    });
+    const createdTasksCount = await Task.countDocuments({ createdBy: userId });
+    const overdueTasksCount = await Task.countDocuments({
+      assignedTo: userId,
+      dueDate: { $lt: new Date() },
+      status: { $ne: "completed" },
     });
 
-  // Tasks by priority
-  const tasksByPriority = await Task.aggregate([
-    {
-      $match: { assignedTo: mongoose.Types.ObjectId(userId) },
-    },
-    {
-      $group: {
-        _id: "$priority",
-        count: { $sum: 1 },
+    // Tasks due today
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const tasksDueToday = await Task.countDocuments({
+      assignedTo: userId,
+      dueDate: { $gte: today, $lt: tomorrow },
+      status: { $ne: "completed" },
+    });
+
+    // Recent assigned tasks
+    const recentAssignedTasks = await Task.find({ assignedTo: userId })
+      .sort("-createdAt")
+      .limit(5)
+      .populate({
+        path: "createdBy",
+        select: "name",
+      });
+
+    // Tasks by priority
+    const tasksByPriority = await Task.aggregate([
+      {
+        $match: { assignedTo: mongoose.Types.ObjectId(userId) },
       },
-    },
-  ]);
-
-  // Tasks by status
-  const tasksByStatus = await Task.aggregate([
-    {
-      $match: { assignedTo: mongoose.Types.ObjectId(userId) },
-    },
-    {
-      $group: {
-        _id: "$status",
-        count: { $sum: 1 },
+      {
+        $group: {
+          _id: "$priority",
+          count: { $sum: 1 },
+        },
       },
-    },
-  ]);
+    ]);
 
-  // Unread notifications count
-  const unreadNotifications = await Notification.countDocuments({
-    recipient: userId,
-    read: false,
-  });
+    // Tasks by status
+    const tasksByStatus = await Task.aggregate([
+      {
+        $match: { assignedTo: mongoose.Types.ObjectId(userId) },
+      },
+      {
+        $group: {
+          _id: "$status",
+          count: { $sum: 1 },
+        },
+      },
+    ]);
 
-  res.status(200).json({
-    success: true,
-    data: {
-      assignedTasksCount,
-      createdTasksCount,
-      overdueTasksCount,
-      tasksDueToday,
-      recentAssignedTasks,
-      tasksByPriority,
-      tasksByStatus,
-      unreadNotifications,
-    },
-  });
+    // Unread notifications count
+    let unreadNotifications = 0;
+    try {
+      unreadNotifications = await Notification.countDocuments({
+        recipient: userId,
+        read: false,
+      });
+    } catch (error) {
+      console.error("Error counting notifications:", error);
+    }
+
+    res.status(200).json({
+      success: true,
+      data: {
+        assignedTasksCount,
+        createdTasksCount,
+        overdueTasksCount,
+        tasksDueToday,
+        recentAssignedTasks,
+        tasksByPriority,
+        tasksByStatus,
+        unreadNotifications,
+      },
+    });
+  } catch (error) {
+    console.error("Dashboard Stats Error:", error);
+    return next(
+      new ErrorResponse("Error retrieving dashboard statistics", 500)
+    );
+  }
 });

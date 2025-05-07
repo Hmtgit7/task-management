@@ -27,6 +27,9 @@ const io = socketIo(httpServer, {
   },
 });
 
+// Make io available globally
+global.io = io;
+
 // Connect to MongoDB
 connectDB();
 
@@ -78,4 +81,4 @@ process.on("unhandledRejection", (err) => {
   httpServer.close(() => process.exit(1));
 });
 
-module.exports = { app, httpServer }; // Export for testing
+module.exports = { app, httpServer };

@@ -400,41 +400,219 @@ exports.deleteTask = asyncHandler(async (req, res, next) => {
 // @route   GET /api/tasks/assigned
 // @access  Private
 exports.getAssignedTasks = asyncHandler(async (req, res, next) => {
-  // Add filter to request query
-  req.query.assignedTo = req.user.id;
+  // Get query parameters
+  const page = parseInt(req.query.page, 10) || 1;
+  const limit = parseInt(req.query.limit, 10) || 10;
+  const startIndex = (page - 1) * limit;
+  const endIndex = page * limit;
 
-  // Call getTasks with modified request
-  return exports.getTasks(req, res, next);
+  // Prepare the filter
+  const filter = { assignedTo: req.user.id };
+
+  // Add status filter if provided
+  if (req.query.status && req.query.status !== "") {
+    filter.status = req.query.status;
+  }
+
+  // Add priority filter if provided
+  if (req.query.priority && req.query.priority !== "") {
+    filter.priority = req.query.priority;
+  }
+
+  // Add search filter if provided
+  if (req.query.search && req.query.search !== "") {
+    filter.$text = { $search: req.query.search };
+  }
+
+  // Count total documents
+  const total = await Task.countDocuments(filter);
+
+  // Get tasks with pagination
+  const tasks = await Task.find(filter)
+    .populate({
+      path: "assignedTo",
+      select: "name email",
+    })
+    .populate({
+      path: "createdBy",
+      select: "name email",
+    })
+    .sort(req.query.sort || "-createdAt")
+    .skip(startIndex)
+    .limit(limit);
+
+  // Pagination result
+  const pagination = {};
+
+  if (endIndex < total) {
+    pagination.next = {
+      page: page + 1,
+      limit,
+    };
+  }
+
+  if (startIndex > 0) {
+    pagination.prev = {
+      page: page - 1,
+      limit,
+    };
+  }
+
+  res.status(200).json({
+    success: true,
+    count: tasks.length,
+    pagination,
+    total,
+    data: tasks,
+  });
 });
 
 // @desc    Get tasks created by current user
 // @route   GET /api/tasks/created
 // @access  Private
 exports.getCreatedTasks = asyncHandler(async (req, res, next) => {
-  // Add filter to request query
-  req.query.createdBy = req.user.id;
+  // Get query parameters
+  const page = parseInt(req.query.page, 10) || 1;
+  const limit = parseInt(req.query.limit, 10) || 10;
+  const startIndex = (page - 1) * limit;
+  const endIndex = page * limit;
 
-  // Call getTasks with modified request
-  return exports.getTasks(req, res, next);
+  // Prepare the filter
+  const filter = { createdBy: req.user.id };
+
+  // Add status filter if provided
+  if (req.query.status && req.query.status !== "") {
+    filter.status = req.query.status;
+  }
+
+  // Add priority filter if provided
+  if (req.query.priority && req.query.priority !== "") {
+    filter.priority = req.query.priority;
+  }
+
+  // Add search filter if provided
+  if (req.query.search && req.query.search !== "") {
+    filter.$text = { $search: req.query.search };
+  }
+
+  // Count total documents
+  const total = await Task.countDocuments(filter);
+
+  // Get tasks with pagination
+  const tasks = await Task.find(filter)
+    .populate({
+      path: "assignedTo",
+      select: "name email",
+    })
+    .populate({
+      path: "createdBy",
+      select: "name email",
+    })
+    .sort(req.query.sort || "-createdAt")
+    .skip(startIndex)
+    .limit(limit);
+
+  // Pagination result
+  const pagination = {};
+
+  if (endIndex < total) {
+    pagination.next = {
+      page: page + 1,
+      limit,
+    };
+  }
+
+  if (startIndex > 0) {
+    pagination.prev = {
+      page: page - 1,
+      limit,
+    };
+  }
+
+  res.status(200).json({
+    success: true,
+    count: tasks.length,
+    pagination,
+    total,
+    data: tasks,
+  });
 });
 
 // @desc    Get overdue tasks for current user
 // @route   GET /api/tasks/overdue
 // @access  Private
 exports.getOverdueTasks = asyncHandler(async (req, res, next) => {
-  // Add filters to request query
-  req.query.assignedTo = req.user.id;
-  req.query.dueDate = { lt: new Date() };
-  req.query.status = { ne: "completed" };
+  // Get query parameters
+  const page = parseInt(req.query.page, 10) || 1;
+  const limit = parseInt(req.query.limit, 10) || 10;
+  const startIndex = (page - 1) * limit;
+  const endIndex = page * limit;
 
-  // Call getTasks with modified request
-  return exports.getTasks(req, res, next);
+  // Prepare the filter for overdue tasks
+  const filter = {
+    assignedTo: req.user.id,
+    dueDate: { $lt: new Date() },
+    status: { $ne: "completed" },
+  };
+
+  // Add search filter if provided
+  if (req.query.search && req.query.search !== "") {
+    filter.$text = { $search: req.query.search };
+  }
+
+  // Count total documents
+  const total = await Task.countDocuments(filter);
+
+  // Get tasks with pagination
+  const tasks = await Task.find(filter)
+    .populate({
+      path: "assignedTo",
+      select: "name email",
+    })
+    .populate({
+      path: "createdBy",
+      select: "name email",
+    })
+    .sort(req.query.sort || "-createdAt")
+    .skip(startIndex)
+    .limit(limit);
+
+  // Pagination result
+  const pagination = {};
+
+  if (endIndex < total) {
+    pagination.next = {
+      page: page + 1,
+      limit,
+    };
+  }
+
+  if (startIndex > 0) {
+    pagination.prev = {
+      page: page - 1,
+      limit,
+    };
+  }
+
+  res.status(200).json({
+    success: true,
+    count: tasks.length,
+    pagination,
+    total,
+    data: tasks,
+  });
 });
 
 // @desc    Get tasks due today for current user
 // @route   GET /api/tasks/due-today
 // @access  Private
 exports.getTasksDueToday = asyncHandler(async (req, res, next) => {
+  // Get query parameters
+  const page = parseInt(req.query.page, 10) || 1;
+  const limit = parseInt(req.query.limit, 10) || 10;
+  const startIndex = (page - 1) * limit;
+  const endIndex = page * limit;
+
   // Create date range for today
   const startOfDay = new Date();
   startOfDay.setHours(0, 0, 0, 0);
@@ -442,14 +620,57 @@ exports.getTasksDueToday = asyncHandler(async (req, res, next) => {
   const endOfDay = new Date();
   endOfDay.setHours(23, 59, 59, 999);
 
-  // Add filters to request query
-  req.query.assignedTo = req.user.id;
-  req.query.dueDate = {
-    gte: startOfDay.toISOString(),
-    lte: endOfDay.toISOString(),
+  // Prepare the filter for tasks due today
+  const filter = {
+    assignedTo: req.user.id,
+    dueDate: { $gte: startOfDay, $lte: endOfDay },
+    status: { $ne: "completed" },
   };
-  req.query.status = { ne: "completed" };
 
-  // Call getTasks with modified request
-  return exports.getTasks(req, res, next);
+  // Add search filter if provided
+  if (req.query.search && req.query.search !== "") {
+    filter.$text = { $search: req.query.search };
+  }
+
+  // Count total documents
+  const total = await Task.countDocuments(filter);
+
+  // Get tasks with pagination
+  const tasks = await Task.find(filter)
+    .populate({
+      path: "assignedTo",
+      select: "name email",
+    })
+    .populate({
+      path: "createdBy",
+      select: "name email",
+    })
+    .sort(req.query.sort || "-createdAt")
+    .skip(startIndex)
+    .limit(limit);
+
+  // Pagination result
+  const pagination = {};
+
+  if (endIndex < total) {
+    pagination.next = {
+      page: page + 1,
+      limit,
+    };
+  }
+
+  if (startIndex > 0) {
+    pagination.prev = {
+      page: page - 1,
+      limit,
+    };
+  }
+
+  res.status(200).json({
+    success: true,
+    count: tasks.length,
+    pagination,
+    total,
+    data: tasks,
+  });
 });

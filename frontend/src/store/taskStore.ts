@@ -1,5 +1,3 @@
-// frontend/src/store/TaskStore
-
 import { create } from "zustand";
 import { tasksAPI } from "@/services/apiService";
 import { emitTaskUpdate } from "@/services/socketService";

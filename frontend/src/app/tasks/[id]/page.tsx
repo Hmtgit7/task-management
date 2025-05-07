@@ -68,12 +68,12 @@ const TaskDetailPage: React.FC = () => {
         }
     }, [taskId, fetchTaskById]);
 
-    // Check if user can edit/delete the task
+    // Check if user can edit/delete the task - with null checks to prevent errors
     const canEdit = user && task && (
         user.role === 'admin' ||
         user.role === 'manager' ||
-        task.createdBy._id === user._id ||
-        task.assignedTo._id === user._id
+        (task.createdBy && task.createdBy._id === user._id) ||
+        (task.assignedTo && task.assignedTo._id === user._id)
     );
 
     // Handle task update
@@ -103,8 +103,11 @@ const TaskDetailPage: React.FC = () => {
         return format(new Date(date), 'MMM d, yyyy');
     };
 
-    // Check if task is overdue
-    const isOverdue = task && task.status !== 'completed' && isAfter(new Date(), new Date(task.dueDate));
+    // Check if task is overdue - with null check to prevent errors
+    const isOverdue = task &&
+        task.status !== 'completed' &&
+        task.dueDate &&
+        isAfter(new Date(), new Date(task.dueDate));
 
     // Animation variants
     const containerVariants = {
@@ -202,17 +205,17 @@ const TaskDetailPage: React.FC = () => {
                                 <h1 className="text-2xl font-semibold text-gray-900">{task.title}</h1>
                                 <div className="flex space-x-2">
                                     <span className={`status-badge ${task.status === 'completed' ? 'status-completed' :
-                                            task.status === 'in-progress' ? 'status-in-progress' :
-                                                task.status === 'review' ? 'status-review' :
-                                                    isOverdue ? 'bg-red-100 text-red-800' : 'status-todo'
+                                        task.status === 'in-progress' ? 'status-in-progress' :
+                                            task.status === 'review' ? 'status-review' :
+                                                isOverdue ? 'bg-red-100 text-red-800' : 'status-todo'
                                         }`}>
                                         {task.status === 'todo' && isOverdue ? 'Overdue' : task.status.replace('-', ' ')}
                                     </span>
 
                                     <span className={`priority-badge ${task.priority === 'urgent' ? 'bg-red-100 text-red-800' :
-                                            task.priority === 'high' ? 'bg-orange-100 text-orange-800' :
-                                                task.priority === 'medium' ? 'priority-medium' :
-                                                    'priority-low'
+                                        task.priority === 'high' ? 'bg-orange-100 text-orange-800' :
+                                            task.priority === 'medium' ? 'priority-medium' :
+                                                'priority-low'
                                         }`}>
                                         {task.priority}
                                     </span>

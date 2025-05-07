@@ -26,8 +26,18 @@ const DashboardPage: React.FC = () => {
 
     // Fetch dashboard data
     useEffect(() => {
-        fetchDashboardStats();
-        fetchTasksDueToday();
+        // Use try-catch to avoid uncaught promise rejections
+        const fetchData = async () => {
+            try {
+                await fetchDashboardStats();
+                await fetchTasksDueToday();
+            } catch (error) {
+                console.error("Error fetching dashboard data:", error);
+                // Error is already handled in the store
+            }
+        };
+
+        fetchData();
     }, [fetchDashboardStats, fetchTasksDueToday]);
 
     // Animation variants
@@ -63,6 +73,18 @@ const DashboardPage: React.FC = () => {
         );
     }
 
+    // Initialize empty stats if they're undefined
+    const stats = dashboardStats || {
+        assignedTasksCount: 0,
+        createdTasksCount: 0,
+        overdueTasksCount: 0,
+        tasksDueToday: 0,
+        recentAssignedTasks: [],
+        tasksByPriority: [],
+        tasksByStatus: [],
+        unreadNotifications: 0
+    };
+
     return (
         <AppLayout>
             <motion.div
@@ -96,7 +118,7 @@ const DashboardPage: React.FC = () => {
                                 <div className="ml-4">
                                     <p className="text-sm font-medium text-gray-500">Assigned Tasks</p>
                                     <p className="text-2xl font-semibold text-gray-900">
-                                        {dashboardStats?.assignedTasksCount || 0}
+                                        {stats.assignedTasksCount || 0}
                                     </p>
                                 </div>
                             </div>
@@ -116,7 +138,7 @@ const DashboardPage: React.FC = () => {
                                 <div className="ml-4">
                                     <p className="text-sm font-medium text-gray-500">Created Tasks</p>
                                     <p className="text-2xl font-semibold text-gray-900">
-                                        {dashboardStats?.createdTasksCount || 0}
+                                        {stats.createdTasksCount || 0}
                                     </p>
                                 </div>
                             </div>
@@ -136,7 +158,7 @@ const DashboardPage: React.FC = () => {
                                 <div className="ml-4">
                                     <p className="text-sm font-medium text-gray-500">Overdue Tasks</p>
                                     <p className="text-2xl font-semibold text-gray-900">
-                                        {dashboardStats?.overdueTasksCount || 0}
+                                        {stats.overdueTasksCount || 0}
                                     </p>
                                 </div>
                             </div>
@@ -156,7 +178,7 @@ const DashboardPage: React.FC = () => {
                                 <div className="ml-4">
                                     <p className="text-sm font-medium text-gray-500">Due Today</p>
                                     <p className="text-2xl font-semibold text-gray-900">
-                                        {dashboardStats?.tasksDueToday || 0}
+                                        {stats.tasksDueToday || 0}
                                     </p>
                                 </div>
                             </div>
@@ -175,7 +197,7 @@ const DashboardPage: React.FC = () => {
                     <div className="p-5 bg-white rounded-lg shadow">
                         <h2 className="mb-4 text-lg font-medium text-gray-900">Tasks by Status</h2>
                         <div className="h-64">
-                            <TaskStatusChart data={dashboardStats?.tasksByStatus || []} />
+                            <TaskStatusChart data={stats.tasksByStatus || []} />
                         </div>
                     </div>
 
@@ -183,7 +205,7 @@ const DashboardPage: React.FC = () => {
                     <div className="p-5 bg-white rounded-lg shadow">
                         <h2 className="mb-4 text-lg font-medium text-gray-900">Tasks by Priority</h2>
                         <div className="h-64">
-                            <TaskPriorityChart data={dashboardStats?.tasksByPriority || []} />
+                            <TaskPriorityChart data={stats.tasksByPriority || []} />
                         </div>
                     </div>
                 </motion.div>
