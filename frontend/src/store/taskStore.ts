@@ -69,15 +69,23 @@ interface TaskState {
   };
 
   // Actions
-  fetchTasks: (params?: any) => Promise<TaskResponse>;
+  fetchTasks: (params?: Record<string, unknown>) => Promise<TaskResponse>;
   fetchTaskById: (id: string) => Promise<Task>;
-  createTask: (taskData: any) => Promise<Task>;
-  updateTask: (id: string, taskData: any) => Promise<Task>;
+  createTask: (taskData: Record<string, unknown>) => Promise<Task>;
+  updateTask: (id: string, taskData: Record<string, unknown>) => Promise<Task>;
   deleteTask: (id: string) => Promise<void>;
-  fetchAssignedTasks: (params?: any) => Promise<TaskResponse>;
-  fetchCreatedTasks: (params?: any) => Promise<TaskResponse>;
-  fetchOverdueTasks: (params?: any) => Promise<TaskResponse>;
-  fetchTasksDueToday: (params?: any) => Promise<TaskResponse>;
+  fetchAssignedTasks: (
+    params?: Record<string, unknown>
+  ) => Promise<TaskResponse>;
+  fetchCreatedTasks: (
+    params?: Record<string, unknown>
+  ) => Promise<TaskResponse>;
+  fetchOverdueTasks: (
+    params?: Record<string, unknown>
+  ) => Promise<TaskResponse>;
+  fetchTasksDueToday: (
+    params?: Record<string, unknown>
+  ) => Promise<TaskResponse>;
   setFilters: (filters: Partial<TaskState["filters"]>) => void;
   resetFilters: () => void;
   clearError: () => void;
@@ -114,7 +122,7 @@ const useTaskStore = create<TaskState>()((set, get) => ({
         ...params,
         page: params.page || get().pagination.currentPage,
         limit: params.limit || get().pagination.limit,
-      };
+      } as Record<string, unknown>;
 
       // Remove empty filters
       Object.keys(queryParams).forEach((key) => {
@@ -130,18 +138,23 @@ const useTaskStore = create<TaskState>()((set, get) => ({
         tasks: response.data,
         isLoading: false,
         pagination: {
-          currentPage: queryParams.page,
-          limit: queryParams.limit,
-          totalPages: Math.ceil(response.total / queryParams.limit),
+          currentPage: Number(queryParams.page || get().pagination.currentPage),
+          limit: Number(queryParams.limit || get().pagination.limit),
+          totalPages: Math.ceil(
+            response.total / Number(queryParams.limit || get().pagination.limit)
+          ),
           total: response.total,
         },
       });
 
       return response;
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to fetch tasks";
+
       set({
         isLoading: false,
-        error: error.response?.data?.error || "Failed to fetch tasks",
+        error: errorMessage,
       });
       throw error;
     }
@@ -160,17 +173,20 @@ const useTaskStore = create<TaskState>()((set, get) => ({
       });
 
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to fetch task";
+
       set({
         isLoading: false,
-        error: error.response?.data?.error || "Failed to fetch task",
+        error: errorMessage,
       });
       throw error;
     }
   },
 
   // Create a new task
-  createTask: async (taskData: any) => {
+  createTask: async (taskData: Record<string, unknown>) => {
     try {
       set({ isLoading: true, error: null });
 
@@ -182,24 +198,28 @@ const useTaskStore = create<TaskState>()((set, get) => ({
       set({ isLoading: false });
 
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to create task";
+
       set({
         isLoading: false,
-        error: error.response?.data?.error || "Failed to create task",
+        error: errorMessage,
       });
       throw error;
     }
   },
 
   // Update an existing task
-  updateTask: async (id: string, taskData: any) => {
+  updateTask: async (id: string, taskData: Record<string, unknown>) => {
     try {
       set({ isLoading: true, error: null });
 
       const response = await tasksAPI.updateTask(id, taskData);
 
       // Update state if the current task is being viewed
-      if (get().task && get().task._id === id) {
+      const currentTask = get().task;
+      if (currentTask && currentTask._id === id) {
         set({ task: response.data });
       }
 
@@ -212,10 +232,13 @@ const useTaskStore = create<TaskState>()((set, get) => ({
       set({ isLoading: false });
 
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to update task";
+
       set({
         isLoading: false,
-        error: error.response?.data?.error || "Failed to update task",
+        error: errorMessage,
       });
       throw error;
     }
@@ -232,15 +255,19 @@ const useTaskStore = create<TaskState>()((set, get) => ({
       get().fetchTasks();
 
       // Clear current task if it's the deleted one
-      if (get().task && get().task._id === id) {
+      const currentTask = get().task;
+      if (currentTask && currentTask._id === id) {
         set({ task: null });
       }
 
       set({ isLoading: false });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to delete task";
+
       set({
         isLoading: false,
-        error: error.response?.data?.error || "Failed to delete task",
+        error: errorMessage,
       });
       throw error;
     }
@@ -257,7 +284,7 @@ const useTaskStore = create<TaskState>()((set, get) => ({
         ...params,
         page: params.page || get().pagination.currentPage,
         limit: params.limit || get().pagination.limit,
-      };
+      } as Record<string, unknown>;
 
       const response = await tasksAPI.getAssignedTasks(queryParams);
 
@@ -265,18 +292,25 @@ const useTaskStore = create<TaskState>()((set, get) => ({
         tasks: response.data,
         isLoading: false,
         pagination: {
-          currentPage: queryParams.page,
-          limit: queryParams.limit,
-          totalPages: Math.ceil(response.total / queryParams.limit),
+          currentPage: Number(queryParams.page || get().pagination.currentPage),
+          limit: Number(queryParams.limit || get().pagination.limit),
+          totalPages: Math.ceil(
+            response.total / Number(queryParams.limit || get().pagination.limit)
+          ),
           total: response.total,
         },
       });
 
       return response;
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Failed to fetch assigned tasks";
+
       set({
         isLoading: false,
-        error: error.response?.data?.error || "Failed to fetch assigned tasks",
+        error: errorMessage,
       });
       throw error;
     }
@@ -293,7 +327,7 @@ const useTaskStore = create<TaskState>()((set, get) => ({
         ...params,
         page: params.page || get().pagination.currentPage,
         limit: params.limit || get().pagination.limit,
-      };
+      } as Record<string, unknown>;
 
       const response = await tasksAPI.getCreatedTasks(queryParams);
 
@@ -301,18 +335,25 @@ const useTaskStore = create<TaskState>()((set, get) => ({
         tasks: response.data,
         isLoading: false,
         pagination: {
-          currentPage: queryParams.page,
-          limit: queryParams.limit,
-          totalPages: Math.ceil(response.total / queryParams.limit),
+          currentPage: Number(queryParams.page || get().pagination.currentPage),
+          limit: Number(queryParams.limit || get().pagination.limit),
+          totalPages: Math.ceil(
+            response.total / Number(queryParams.limit || get().pagination.limit)
+          ),
           total: response.total,
         },
       });
 
       return response;
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Failed to fetch created tasks";
+
       set({
         isLoading: false,
-        error: error.response?.data?.error || "Failed to fetch created tasks",
+        error: errorMessage,
       });
       throw error;
     }
@@ -329,7 +370,7 @@ const useTaskStore = create<TaskState>()((set, get) => ({
         ...params,
         page: params.page || get().pagination.currentPage,
         limit: params.limit || get().pagination.limit,
-      };
+      } as Record<string, unknown>;
 
       const response = await tasksAPI.getOverdueTasks(queryParams);
 
@@ -337,18 +378,25 @@ const useTaskStore = create<TaskState>()((set, get) => ({
         tasks: response.data,
         isLoading: false,
         pagination: {
-          currentPage: queryParams.page,
-          limit: queryParams.limit,
-          totalPages: Math.ceil(response.total / queryParams.limit),
+          currentPage: Number(queryParams.page || get().pagination.currentPage),
+          limit: Number(queryParams.limit || get().pagination.limit),
+          totalPages: Math.ceil(
+            response.total / Number(queryParams.limit || get().pagination.limit)
+          ),
           total: response.total,
         },
       });
 
       return response;
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Failed to fetch overdue tasks";
+
       set({
         isLoading: false,
-        error: error.response?.data?.error || "Failed to fetch overdue tasks",
+        error: errorMessage,
       });
       throw error;
     }
@@ -365,7 +413,7 @@ const useTaskStore = create<TaskState>()((set, get) => ({
         ...params,
         page: params.page || get().pagination.currentPage,
         limit: params.limit || get().pagination.limit,
-      };
+      } as Record<string, unknown>;
 
       const response = await tasksAPI.getTasksDueToday(queryParams);
 
@@ -373,18 +421,25 @@ const useTaskStore = create<TaskState>()((set, get) => ({
         tasks: response.data,
         isLoading: false,
         pagination: {
-          currentPage: queryParams.page,
-          limit: queryParams.limit,
-          totalPages: Math.ceil(response.total / queryParams.limit),
+          currentPage: Number(queryParams.page || get().pagination.currentPage),
+          limit: Number(queryParams.limit || get().pagination.limit),
+          totalPages: Math.ceil(
+            response.total / Number(queryParams.limit || get().pagination.limit)
+          ),
           total: response.total,
         },
       });
 
       return response;
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Failed to fetch tasks due today";
+
       set({
         isLoading: false,
-        error: error.response?.data?.error || "Failed to fetch tasks due today",
+        error: errorMessage,
       });
       throw error;
     }
