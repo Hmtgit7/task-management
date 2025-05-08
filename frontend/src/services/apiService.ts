@@ -1,4 +1,5 @@
 import axios, { AxiosRequestConfig, AxiosError, AxiosResponse } from "axios";
+import { toast } from "react-hot-toast";
 
 // Create axios instance
 const api = axios.create({
@@ -19,11 +20,13 @@ api.interceptors.request.use(
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
 
-      // Log for debugging
-      console.log(
-        "Adding token to request:",
-        `Bearer ${token.substring(0, 10)}...`
-      );
+      // Log for debugging in development
+      if (process.env.NODE_ENV === "development") {
+        console.log(
+          "Adding token to request:",
+          `Bearer ${token.substring(0, 10)}...`
+        );
+      }
     } else {
       console.log("No token found in localStorage");
     }
@@ -59,13 +62,15 @@ api.interceptors.response.use(
       }
     }
 
-    // Log the error for debugging
-    console.error(
-      "API Error:",
-      error.response?.status,
-      error.message,
-      originalRequest?.url
-    );
+    // Log the error for debugging in development
+    if (process.env.NODE_ENV === "development") {
+      console.error(
+        "API Error:",
+        error.response?.status,
+        error.message,
+        originalRequest?.url
+      );
+    }
 
     return Promise.reject(error);
   }
@@ -121,6 +126,30 @@ export const authAPI = {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
   },
+
+  // Guest login function
+  guestLogin: async () => {
+    try {
+      // Create a mock user and token for guest mode
+      const guestUser = {
+        _id: "guest-user",
+        name: "Guest User",
+        email: "guest@example.com",
+        role: "user", // Ensure this matches the expected role type
+      };
+
+      const mockToken = "guest-token";
+
+      // Store in localStorage
+      localStorage.setItem("token", mockToken);
+      localStorage.setItem("user", JSON.stringify(guestUser));
+
+      return { user: guestUser, token: mockToken };
+    } catch (error) {
+      console.error("Guest login error:", error);
+      throw error;
+    }
+  },
 };
 
 // Tasks API
@@ -131,7 +160,14 @@ export const tasksAPI = {
       return response.data;
     } catch (error) {
       console.error("Get all tasks error:", error);
-      throw error;
+      // Return empty data structure to prevent UI errors
+      return {
+        success: false,
+        count: 0,
+        pagination: {},
+        total: 0,
+        data: [],
+      };
     }
   },
 
@@ -147,20 +183,81 @@ export const tasksAPI = {
 
   createTask: async (taskData: any) => {
     try {
+      // Validate data before sending
+      if (!taskData.title) {
+        throw new Error("Title is required");
+      }
+
+      // Ensure date is in proper format
+      if (taskData.dueDate) {
+        const dueDateObj = new Date(taskData.dueDate);
+        if (isNaN(dueDateObj.getTime())) {
+          throw new Error("Invalid due date format");
+        }
+      }
+
+      // Handle recurring task data properly
+      if (taskData.isRecurring && taskData.recurringPattern === "none") {
+        taskData.isRecurring = false;
+      }
+
+      // Send validated data
       const response = await api.post("/tasks", taskData);
       return response.data;
-    } catch (error) {
+    } catch (error: any) {
       console.error("Create task error:", error);
+
+      // Show user-friendly error message
+      if (error.response?.data?.error) {
+        toast.error(error.response.data.error);
+      } else {
+        toast.error(error.message || "Failed to create task");
+      }
+
       throw error;
     }
   },
 
   updateTask: async (id: string, taskData: any) => {
     try {
+      // Validate data before sending
+      if (taskData.title === "") {
+        throw new Error("Title cannot be empty");
+      }
+
+      // Ensure date is in proper format
+      if (taskData.dueDate) {
+        const dueDateObj = new Date(taskData.dueDate);
+        if (isNaN(dueDateObj.getTime())) {
+          throw new Error("Invalid due date format");
+        }
+      }
+
+      // Handle recurring task data properly
+      if (taskData.isRecurring === false) {
+        taskData.recurringPattern = "none";
+      }
+
+      // Clean undefined/null values to prevent validation errors
+      Object.keys(taskData).forEach((key) => {
+        if (taskData[key] === undefined || taskData[key] === null) {
+          delete taskData[key];
+        }
+      });
+
+      // Send validated data
       const response = await api.put(`/tasks/${id}`, taskData);
       return response.data;
-    } catch (error) {
+    } catch (error: any) {
       console.error(`Update task ${id} error:`, error);
+
+      // Show user-friendly error message
+      if (error.response?.data?.error) {
+        toast.error(error.response.data.error);
+      } else {
+        toast.error(error.message || "Failed to update task");
+      }
+
       throw error;
     }
   },
@@ -168,9 +265,18 @@ export const tasksAPI = {
   deleteTask: async (id: string) => {
     try {
       const response = await api.delete(`/tasks/${id}`);
+      toast.success("Task deleted successfully");
       return response.data;
-    } catch (error) {
+    } catch (error: any) {
       console.error(`Delete task ${id} error:`, error);
+
+      // Show user-friendly error message
+      if (error.response?.data?.error) {
+        toast.error(error.response.data.error);
+      } else {
+        toast.error(error.message || "Failed to delete task");
+      }
+
       throw error;
     }
   },
@@ -181,7 +287,14 @@ export const tasksAPI = {
       return response.data;
     } catch (error) {
       console.error("Get assigned tasks error:", error);
-      throw error;
+      // Return empty data structure to prevent UI errors
+      return {
+        success: false,
+        count: 0,
+        pagination: {},
+        total: 0,
+        data: [],
+      };
     }
   },
 
@@ -191,7 +304,14 @@ export const tasksAPI = {
       return response.data;
     } catch (error) {
       console.error("Get created tasks error:", error);
-      throw error;
+      // Return empty data structure to prevent UI errors
+      return {
+        success: false,
+        count: 0,
+        pagination: {},
+        total: 0,
+        data: [],
+      };
     }
   },
 
@@ -201,7 +321,14 @@ export const tasksAPI = {
       return response.data;
     } catch (error) {
       console.error("Get overdue tasks error:", error);
-      throw error;
+      // Return empty data structure to prevent UI errors
+      return {
+        success: false,
+        count: 0,
+        pagination: {},
+        total: 0,
+        data: [],
+      };
     }
   },
 
@@ -211,7 +338,14 @@ export const tasksAPI = {
       return response.data;
     } catch (error) {
       console.error("Get tasks due today error:", error);
-      throw error;
+      // Return empty data structure to prevent UI errors
+      return {
+        success: false,
+        count: 0,
+        pagination: {},
+        total: 0,
+        data: [],
+      };
     }
   },
 };
@@ -224,7 +358,14 @@ export const notificationsAPI = {
       return response.data;
     } catch (error) {
       console.error("Get notifications error:", error);
-      throw error;
+      // Return empty data to prevent UI errors
+      return {
+        success: false,
+        count: 0,
+        pagination: {},
+        total: 0,
+        data: [],
+      };
     }
   },
 
@@ -264,7 +405,29 @@ export const notificationsAPI = {
       return response.data;
     } catch (error) {
       console.error("Get notification preferences error:", error);
-      throw error;
+      // Return default preferences to prevent UI errors
+      return {
+        data: {
+          email: {
+            taskAssigned: true,
+            taskUpdated: true,
+            taskCompleted: true,
+            taskOverdue: true,
+            dailySummary: false,
+          },
+          inApp: {
+            taskAssigned: true,
+            taskUpdated: true,
+            taskCompleted: true,
+            taskOverdue: true,
+            comments: true,
+          },
+          muteAll: false,
+          quietHoursStart: "22:00",
+          quietHoursEnd: "08:00",
+          timezone: "UTC",
+        },
+      };
     }
   },
 
@@ -287,7 +450,19 @@ export const analyticsAPI = {
       return response.data;
     } catch (error) {
       console.error("Get dashboard stats error:", error);
-      throw error;
+      // Return default data to prevent UI errors
+      return {
+        data: {
+          assignedTasksCount: 0,
+          createdTasksCount: 0,
+          overdueTasksCount: 0,
+          tasksDueToday: 0,
+          recentAssignedTasks: [],
+          tasksByPriority: [],
+          tasksByStatus: [],
+          unreadNotifications: 0,
+        },
+      };
     }
   },
 
@@ -297,7 +472,21 @@ export const analyticsAPI = {
       return response.data;
     } catch (error) {
       console.error("Get user analytics error:", error);
-      throw error;
+      // Return default data to prevent UI errors
+      return {
+        data: {
+          assignedTasks: 0,
+          createdTasks: 0,
+          completedTasks: 0,
+          overdueTasks: 0,
+          tasksCompletedOnTime: 0,
+          completionRate: 0,
+          onTimeCompletionRate: 0,
+          tasksByPriority: [],
+          tasksByStatus: [],
+          recentCompletedTasks: [],
+        },
+      };
     }
   },
 
@@ -307,7 +496,19 @@ export const analyticsAPI = {
       return response.data;
     } catch (error) {
       console.error("Get task completion analytics error:", error);
-      throw error;
+      // Return default data to prevent UI errors
+      return {
+        data: {
+          completedTasks: [],
+          overdueTasks: 0,
+          totalTasks: 0,
+          completedTasksCount: 0,
+          completionRate: 0,
+          userPerformance: [],
+          statusDistribution: [],
+          priorityDistribution: [],
+        },
+      };
     }
   },
 };

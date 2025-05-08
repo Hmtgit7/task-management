@@ -357,8 +357,8 @@ exports.deleteTask = asyncHandler(async (req, res, next) => {
     });
   }
 
-  // Delete the task
-  await task.remove();
+  // Delete the task - FIXED: use findByIdAndDelete instead of task.remove()
+  await Task.findByIdAndDelete(task._id);
 
   // Notify the assigned user if different from creator
   if (task.assignedTo.toString() !== req.user.id) {

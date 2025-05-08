@@ -4,8 +4,6 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { format, isAfter, parseISO } from 'date-fns';
 import { motion } from 'framer-motion';
-import { Formik, Form, Field, ErrorMessage } from 'formik';
-import * as Yup from 'yup';
 import { toast } from 'react-hot-toast';
 import {
     ArrowPathIcon,
@@ -25,24 +23,6 @@ import useTaskStore from '@/store/taskStore';
 import useAuthStore from '@/store/authStore';
 import { joinTaskRoom, leaveTaskRoom } from '@/services/socketService';
 
-// Task update validation schema
-const TaskUpdateSchema = Yup.object().shape({
-    title: Yup.string()
-        .required('Title is required')
-        .max(100, 'Title must be less than 100 characters'),
-    description: Yup.string()
-        .required('Description is required')
-        .max(500, 'Description must be less than 500 characters'),
-    status: Yup.string()
-        .required('Status is required')
-        .oneOf(['todo', 'in-progress', 'review', 'completed'], 'Invalid status'),
-    priority: Yup.string()
-        .required('Priority is required')
-        .oneOf(['low', 'medium', 'high', 'urgent'], 'Invalid priority'),
-    dueDate: Yup.date()
-        .required('Due date is required')
-});
-
 const TaskDetailPage: React.FC = () => {
     const params = useParams();
     const router = useRouter();
@@ -56,7 +36,10 @@ const TaskDetailPage: React.FC = () => {
     // Fetch task on component mount
     useEffect(() => {
         if (taskId) {
-            fetchTaskById(taskId);
+            fetchTaskById(taskId).catch(err => {
+                console.error("Error fetching task:", err);
+                toast.error("Failed to load task details");
+            });
 
             // Join socket room for real-time updates
             joinTaskRoom(taskId);
@@ -79,11 +62,41 @@ const TaskDetailPage: React.FC = () => {
     // Handle task update
     const handleUpdateTask = async (values: any) => {
         try {
-            await updateTask(taskId, values);
+            // Clean values before sending to API// Clean values before sending to API
+            const cleanedValues = { ...values };
+
+            // Ensure dates are in the correct format
+            if (cleanedValues.dueDate) {
+                try {
+                    // Validate the date format
+                    const date = new Date(cleanedValues.dueDate);
+                    if (isNaN(date.getTime())) {
+                        throw new Error("Invalid due date format");
+                    }
+                } catch (error) {
+                    toast.error("Invalid date format. Please use YYYY-MM-DD format.");
+                    return;
+                }
+            }
+
+            // Remove any undefined or null values
+            Object.keys(cleanedValues).forEach(key => {
+                if (cleanedValues[key] === undefined || cleanedValues[key] === null) {
+                    delete cleanedValues[key];
+                }
+            });
+
+            // If marking as completed, ensure we have the completed status
+            if (cleanedValues.status === 'completed') {
+                cleanedValues.completedAt = new Date().toISOString();
+            }
+
+            await updateTask(taskId, cleanedValues);
             setIsEditing(false);
             toast.success('Task updated successfully');
         } catch (error) {
-            toast.error('Failed to update task');
+            console.error("Error updating task:", error);
+            toast.error('Failed to update task. Please try again.');
         }
     };
 
@@ -94,7 +107,8 @@ const TaskDetailPage: React.FC = () => {
             toast.success('Task deleted successfully');
             router.push('/tasks/assigned');
         } catch (error) {
-            toast.error('Failed to delete task');
+            console.error("Error deleting task:", error);
+            toast.error('Failed to delete task. Please try again.');
         }
     };
 
@@ -114,6 +128,17 @@ const TaskDetailPage: React.FC = () => {
         task.status !== 'completed' &&
         task.dueDate &&
         isAfter(new Date(), parseISO(task.dueDate));
+
+    // Handle mark as completed action
+    const handleMarkAsCompleted = async () => {
+        try {
+            await updateTask(taskId, { status: 'completed', completedAt: new Date().toISOString() });
+            toast.success('Task marked as completed');
+        } catch (error) {
+            console.error("Error marking task as completed:", error);
+            toast.error('Failed to mark task as completed');
+        }
+    };
 
     // Animation variants
     const containerVariants = {
@@ -315,7 +340,7 @@ const TaskDetailPage: React.FC = () => {
                             {task.status !== 'completed' && canEdit && (
                                 <div className="mt-8">
                                     <button
-                                        onClick={() => handleUpdateTask({ ...task, status: 'completed' })}
+                                        onClick={handleMarkAsCompleted}
                                         className="btn-primary"
                                     >
                                         <CheckIcon className="w-5 h-5 mr-2" />
@@ -331,196 +356,174 @@ const TaskDetailPage: React.FC = () => {
                         <div className="p-6">
                             <h2 className="text-xl font-semibold text-gray-900">Edit Task</h2>
 
-                            <Formik
-                                initialValues={{
-                                    title: task.title || '',
-                                    description: task.description || '',
-                                    status: task.status || 'todo',
-                                    priority: task.priority || 'medium',
-                                    dueDate: task.dueDate ? task.dueDate.split('T')[0] : '', // Format date for input
-                                    isRecurring: task.isRecurring || false,
-                                    recurringPattern: task.recurringPattern || 'none',
-                                    recurringEndDate: task.recurringEndDate ? task.recurringEndDate.split('T')[0] : '',
-                                    assignedTo: task.assignedTo?._id || ''
-                                }}
-                                validationSchema={TaskUpdateSchema}
-                                onSubmit={handleUpdateTask}
-                            >
-                                {({ values, errors, touched, setFieldValue }) => (
-                                    <Form className="mt-4 space-y-4">
-                                        {/* Title */}
-                                        <div>
-                                            <label htmlFor="title" className="block text-sm font-medium text-gray-700">
-                                                Title
-                                            </label>
-                                            <Field
-                                                id="title"
-                                                name="title"
-                                                type="text"
-                                                className={`mt-1 input-field ${errors.title && touched.title ? 'border-red-500' : ''
-                                                    }`}
-                                            />
-                                            <ErrorMessage
-                                                name="title"
-                                                component="p"
-                                                className="mt-1 text-sm text-red-600"
-                                            />
-                                        </div>
+                            <form className="mt-4 space-y-4" onSubmit={(e) => {
+                                e.preventDefault();
+                                const formData = new FormData(e.currentTarget);
+                                const values: any = {
+                                    title: formData.get('title') as string,
+                                    description: formData.get('description') as string,
+                                    status: formData.get('status') as string,
+                                    priority: formData.get('priority') as string,
+                                    dueDate: formData.get('dueDate') as string,
+                                    isRecurring: formData.get('isRecurring') === 'on',
+                                };
 
-                                        {/* Description */}
-                                        <div>
-                                            <label htmlFor="description" className="block text-sm font-medium text-gray-700">
-                                                Description
-                                            </label>
-                                            <Field
-                                                as="textarea"
-                                                id="description"
-                                                name="description"
-                                                rows={4}
-                                                className={`mt-1 input-field ${errors.description && touched.description ? 'border-red-500' : ''
-                                                    }`}
-                                            />
-                                            <ErrorMessage
-                                                name="description"
-                                                component="p"
-                                                className="mt-1 text-sm text-red-600"
-                                            />
-                                        </div>
+                                // Only add recurring pattern if isRecurring is true
+                                if (values.isRecurring) {
+                                    values.recurringPattern = formData.get('recurringPattern') as string;
+                                    // Only add end date if a pattern is selected
+                                    if (values.recurringPattern !== 'none') {
+                                        const endDate = formData.get('recurringEndDate') as string;
+                                        if (endDate) values.recurringEndDate = endDate;
+                                    }
+                                }
 
-                                        {/* Status */}
-                                        <div>
-                                            <label htmlFor="status" className="block text-sm font-medium text-gray-700">
-                                                Status
-                                            </label>
-                                            <Field
-                                                as="select"
-                                                id="status"
-                                                name="status"
-                                                className={`mt-1 input-field ${errors.status && touched.status ? 'border-red-500' : ''
-                                                    }`}
-                                            >
-                                                <option value="todo">To Do</option>
-                                                <option value="in-progress">In Progress</option>
-                                                <option value="review">In Review</option>
-                                                <option value="completed">Completed</option>
-                                            </Field>
-                                            <ErrorMessage
-                                                name="status"
-                                                component="p"
-                                                className="mt-1 text-sm text-red-600"
-                                            />
-                                        </div>
+                                handleUpdateTask(values);
+                            }}>
+                                {/* Title */}
+                                <div>
+                                    <label htmlFor="title" className="block text-sm font-medium text-gray-700">
+                                        Title
+                                    </label>
+                                    <input
+                                        id="title"
+                                        name="title"
+                                        type="text"
+                                        defaultValue={task.title || ''}
+                                        required
+                                        className="mt-1 input-field"
+                                    />
+                                </div>
 
-                                        {/* Priority */}
-                                        <div>
-                                            <label htmlFor="priority" className="block text-sm font-medium text-gray-700">
-                                                Priority
-                                            </label>
-                                            <Field
-                                                as="select"
-                                                id="priority"
-                                                name="priority"
-                                                className={`mt-1 input-field ${errors.priority && touched.priority ? 'border-red-500' : ''
-                                                    }`}
-                                            >
-                                                <option value="low">Low</option>
-                                                <option value="medium">Medium</option>
-                                                <option value="high">High</option>
-                                                <option value="urgent">Urgent</option>
-                                            </Field>
-                                            <ErrorMessage
-                                                name="priority"
-                                                component="p"
-                                                className="mt-1 text-sm text-red-600"
-                                            />
-                                        </div>
+                                {/* Description */}
+                                <div>
+                                    <label htmlFor="description" className="block text-sm font-medium text-gray-700">
+                                        Description
+                                    </label>
+                                    <textarea
+                                        id="description"
+                                        name="description"
+                                        rows={4}
+                                        defaultValue={task.description || ''}
+                                        required
+                                        className="mt-1 input-field"
+                                    />
+                                </div>
 
-                                        {/* Due Date */}
-                                        <div>
-                                            <label htmlFor="dueDate" className="block text-sm font-medium text-gray-700">
-                                                Due Date
-                                            </label>
-                                            <Field
-                                                id="dueDate"
-                                                name="dueDate"
-                                                type="date"
-                                                className={`mt-1 input-field ${errors.dueDate && touched.dueDate ? 'border-red-500' : ''
-                                                    }`}
-                                            />
-                                            <ErrorMessage
-                                                name="dueDate"
-                                                component="p"
-                                                className="mt-1 text-sm text-red-600"
-                                            />
-                                        </div>
+                                {/* Status */}
+                                <div>
+                                    <label htmlFor="status" className="block text-sm font-medium text-gray-700">
+                                        Status
+                                    </label>
+                                    <select
+                                        id="status"
+                                        name="status"
+                                        defaultValue={task.status || 'todo'}
+                                        className="mt-1 input-field"
+                                    >
+                                        <option value="todo">To Do</option>
+                                        <option value="in-progress">In Progress</option>
+                                        <option value="review">In Review</option>
+                                        <option value="completed">Completed</option>
+                                    </select>
+                                </div>
 
-                                        {/* Is Recurring */}
-                                        <div className="flex items-center">
-                                            <Field
-                                                id="isRecurring"
-                                                name="isRecurring"
-                                                type="checkbox"
-                                                className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
-                                            />
-                                            <label htmlFor="isRecurring" className="block ml-2 text-sm text-gray-700">
-                                                Recurring Task
-                                            </label>
-                                        </div>
+                                {/* Priority */}
+                                <div>
+                                    <label htmlFor="priority" className="block text-sm font-medium text-gray-700">
+                                        Priority
+                                    </label>
+                                    <select
+                                        id="priority"
+                                        name="priority"
+                                        defaultValue={task.priority || 'medium'}
+                                        className="mt-1 input-field"
+                                    >
+                                        <option value="low">Low</option>
+                                        <option value="medium">Medium</option>
+                                        <option value="high">High</option>
+                                        <option value="urgent">Urgent</option>
+                                    </select>
+                                </div>
 
-                                        {/* Recurring Pattern (only if isRecurring is true) */}
-                                        {values.isRecurring && (
-                                            <div>
-                                                <label htmlFor="recurringPattern" className="block text-sm font-medium text-gray-700">
-                                                    Recurring Pattern
-                                                </label>
-                                                <Field
-                                                    as="select"
-                                                    id="recurringPattern"
-                                                    name="recurringPattern"
-                                                    className="mt-1 input-field"
-                                                >
-                                                    <option value="none">None</option>
-                                                    <option value="daily">Daily</option>
-                                                    <option value="weekly">Weekly</option>
-                                                    <option value="monthly">Monthly</option>
-                                                </Field>
-                                            </div>
-                                        )}
+                                {/* Due Date */}
+                                <div>
+                                    <label htmlFor="dueDate" className="block text-sm font-medium text-gray-700">
+                                        Due Date
+                                    </label>
+                                    <input
+                                        id="dueDate"
+                                        name="dueDate"
+                                        type="date"
+                                        defaultValue={task.dueDate ? task.dueDate.split('T')[0] : ''}
+                                        required
+                                        className="mt-1 input-field"
+                                    />
+                                </div>
 
-                                        {/* Recurring End Date (only if isRecurring is true and pattern is not none) */}
-                                        {values.isRecurring && values.recurringPattern !== 'none' && (
-                                            <div>
-                                                <label htmlFor="recurringEndDate" className="block text-sm font-medium text-gray-700">
-                                                    Recurring End Date (Optional)
-                                                </label>
-                                                <Field
-                                                    id="recurringEndDate"
-                                                    name="recurringEndDate"
-                                                    type="date"
-                                                    className="mt-1 input-field"
-                                                />
-                                            </div>
-                                        )}
+                                {/* Is Recurring */}
+                                <div className="flex items-center">
+                                    <input
+                                        id="isRecurring"
+                                        name="isRecurring"
+                                        type="checkbox"
+                                        defaultChecked={task.isRecurring}
+                                        className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                                    />
+                                    <label htmlFor="isRecurring" className="block ml-2 text-sm text-gray-700">
+                                        Recurring Task
+                                    </label>
+                                </div>
 
-                                        {/* Submit buttons */}
-                                        <div className="flex justify-end pt-4 mt-6 space-x-2 border-t">
-                                            <button
-                                                type="button"
-                                                onClick={() => setIsEditing(false)}
-                                                className="btn-outline"
-                                            >
-                                                Cancel
-                                            </button>
-                                            <button
-                                                type="submit"
-                                                className="btn-primary"
-                                            >
-                                                Save Changes
-                                            </button>
-                                        </div>
-                                    </Form>
-                                )}
-                            </Formik>
+                                {/* Recurring Pattern (only if isRecurring is true) */}
+                                <div>
+                                    <label htmlFor="recurringPattern" className="block text-sm font-medium text-gray-700">
+                                        Recurring Pattern
+                                    </label>
+                                    <select
+                                        id="recurringPattern"
+                                        name="recurringPattern"
+                                        defaultValue={task.recurringPattern || 'none'}
+                                        className="mt-1 input-field"
+                                    >
+                                        <option value="none">None</option>
+                                        <option value="daily">Daily</option>
+                                        <option value="weekly">Weekly</option>
+                                        <option value="monthly">Monthly</option>
+                                    </select>
+                                </div>
+
+                                {/* Recurring End Date */}
+                                <div>
+                                    <label htmlFor="recurringEndDate" className="block text-sm font-medium text-gray-700">
+                                        Recurring End Date (Optional)
+                                    </label>
+                                    <input
+                                        id="recurringEndDate"
+                                        name="recurringEndDate"
+                                        type="date"
+                                        defaultValue={task.recurringEndDate ? task.recurringEndDate.split('T')[0] : ''}
+                                        className="mt-1 input-field"
+                                    />
+                                </div>
+
+                                {/* Submit buttons */}
+                                <div className="flex justify-end pt-4 mt-6 space-x-2 border-t">
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsEditing(false)}
+                                        className="btn-outline"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        className="btn-primary"
+                                    >
+                                        Save Changes
+                                    </button>
+                                </div>
+                            </form>
                         </div>
                     </motion.div>
                 )}

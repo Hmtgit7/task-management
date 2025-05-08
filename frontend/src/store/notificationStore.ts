@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { notificationsAPI } from "@/services/apiService";
 import { getSocket } from "@/services/socketService";
+import { toast } from "react-hot-toast";
 
 // Define Notification type
 export interface Notification {
@@ -96,7 +97,7 @@ interface NotificationState {
   clearError: () => void;
 }
 
-// Create notification store
+// Create notification store with improved error handling
 const useNotificationStore = create<NotificationState>()((set, get) => ({
   notifications: [],
   unreadCount: 0,
@@ -110,7 +111,7 @@ const useNotificationStore = create<NotificationState>()((set, get) => ({
     total: 0,
   },
 
-  // Fetch notifications
+  // Fetch notifications with better error handling
   fetchNotifications: async (params = {}) => {
     try {
       set({ isLoading: true, error: null });
@@ -124,29 +125,48 @@ const useNotificationStore = create<NotificationState>()((set, get) => ({
       const response = await notificationsAPI.getNotifications(queryParams);
 
       // Count unread notifications
-      const unreadCount = response.data.filter(
-        (notification: Notification) => !notification.read
-      ).length;
+      const unreadCount = response.data
+        ? response.data.filter(
+            (notification: Notification) => !notification.read
+          ).length
+        : 0;
 
       set({
-        notifications: response.data,
+        notifications: response.data || [], // Ensure we never set undefined
         unreadCount,
         isLoading: false,
         pagination: {
           currentPage: queryParams.page,
           limit: queryParams.limit,
-          totalPages: Math.ceil(response.total / queryParams.limit),
-          total: response.total,
+          totalPages: Math.ceil((response.total || 0) / queryParams.limit),
+          total: response.total || 0,
         },
       });
 
       return response;
     } catch (error: any) {
+      console.error("Error fetching notifications:", error);
+
+      // Set more user-friendly error
       set({
         isLoading: false,
         error: error.response?.data?.error || "Failed to fetch notifications",
+        notifications: [], // Ensure we have an empty array not undefined
       });
-      throw error;
+
+      // Show toast notification for user feedback in development, not in production to avoid annoying users
+      if (process.env.NODE_ENV !== "production") {
+        toast.error("Failed to load notifications. Please try again later.");
+      }
+
+      // Return empty data to prevent app crashes
+      return {
+        success: false,
+        count: 0,
+        pagination: {},
+        total: 0,
+        data: [],
+      };
     }
   },
 
@@ -179,12 +199,17 @@ const useNotificationStore = create<NotificationState>()((set, get) => ({
 
       return response.data;
     } catch (error: any) {
+      console.error(`Error marking notification ${id} as read:`, error);
+
       set({
         isLoading: false,
         error:
           error.response?.data?.error || "Failed to mark notification as read",
       });
-      throw error;
+
+      // Return the original notification to prevent UI issues
+      const notification = get().notifications.find((n) => n._id === id);
+      return notification || ({ _id: id } as Notification);
     }
   },
 
@@ -204,14 +229,19 @@ const useNotificationStore = create<NotificationState>()((set, get) => ({
         unreadCount: 0,
         isLoading: false,
       }));
+
+      return Promise.resolve();
     } catch (error: any) {
+      console.error("Error marking all notifications as read:", error);
+
       set({
         isLoading: false,
         error:
           error.response?.data?.error ||
           "Failed to mark all notifications as read",
       });
-      throw error;
+
+      return Promise.reject(error);
     }
   },
 
@@ -239,12 +269,17 @@ const useNotificationStore = create<NotificationState>()((set, get) => ({
           isLoading: false,
         };
       });
+
+      return Promise.resolve();
     } catch (error: any) {
+      console.error(`Error deleting notification ${id}:`, error);
+
       set({
         isLoading: false,
         error: error.response?.data?.error || "Failed to delete notification",
       });
-      throw error;
+
+      return Promise.reject(error);
     }
   },
 
@@ -262,13 +297,41 @@ const useNotificationStore = create<NotificationState>()((set, get) => ({
 
       return response.data;
     } catch (error: any) {
+      console.error("Error fetching notification preferences:", error);
+
+      // Set default preferences to avoid UI issues
+      const defaultPreferences = {
+        _id: "default",
+        user: "default",
+        email: {
+          taskAssigned: true,
+          taskUpdated: true,
+          taskCompleted: true,
+          taskOverdue: true,
+          dailySummary: false,
+        },
+        inApp: {
+          taskAssigned: true,
+          taskUpdated: true,
+          taskCompleted: true,
+          taskOverdue: true,
+          comments: true,
+        },
+        muteAll: false,
+        quietHoursStart: "22:00",
+        quietHoursEnd: "08:00",
+        timezone: "UTC",
+      };
+
       set({
         isLoading: false,
         error:
           error.response?.data?.error ||
           "Failed to fetch notification preferences",
+        preferences: defaultPreferences as NotificationPreference,
       });
-      throw error;
+
+      return defaultPreferences as NotificationPreference;
     }
   },
 
@@ -286,18 +349,24 @@ const useNotificationStore = create<NotificationState>()((set, get) => ({
 
       return response.data;
     } catch (error: any) {
+      console.error("Error updating notification preferences:", error);
+
       set({
         isLoading: false,
         error:
           error.response?.data?.error ||
           "Failed to update notification preferences",
       });
-      throw error;
+
+      const currentPreferences = get().preferences;
+      return currentPreferences as NotificationPreference;
     }
   },
 
   // Add real-time notification
   addNotification: (notification: Notification) => {
+    if (!notification) return;
+
     set((state) => {
       // Check if notification already exists
       const exists = state.notifications.some(
@@ -326,13 +395,29 @@ const useNotificationStore = create<NotificationState>()((set, get) => ({
     const socket = getSocket();
 
     if (!socket) {
+      console.warn("Socket connection not available for notifications");
       return;
     }
 
-    // Listen for real-time notifications
-    socket.on("notification", (notification: Notification) => {
-      get().addNotification(notification);
-    });
+    try {
+      // Remove existing listener if any to prevent duplicates
+      socket.off("notification");
+
+      // Listen for real-time notifications
+      socket.on("notification", (notification: Notification) => {
+        if (!notification) return;
+
+        // Add notification to store
+        get().addNotification(notification);
+
+        // Show toast notification for real-time feedback
+        toast.success(`New notification: ${notification.title}`);
+      });
+
+      console.log("Real-time notifications initialized");
+    } catch (error) {
+      console.error("Error setting up real-time notifications:", error);
+    }
   },
 
   // Clear error

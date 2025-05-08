@@ -9,19 +9,24 @@ import LoadingScreen from '@/components/common/LoadingScreen';
 interface AuthContextType {
     isAuthenticated: boolean;
     isLoading: boolean;
+    isGuestMode: boolean;
 }
 
 const AuthContext = createContext<AuthContextType>({
     isAuthenticated: false,
     isLoading: true,
+    isGuestMode: false,
 });
 
 // Auth provider component
 const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const router = useRouter();
     const pathname = usePathname();
-    const { isAuthenticated, isLoading, checkAuthState } = useAuthStore();
+    const { isAuthenticated, isLoading, checkAuthState, user } = useAuthStore();
     const [isChecking, setIsChecking] = useState(true);
+
+    // Check if in guest mode
+    const isGuestMode = user?.email === 'guest@example.com';
 
     useEffect(() => {
         const checkAuth = async () => {
@@ -53,7 +58,7 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
 
     return (
-        <AuthContext.Provider value={{ isAuthenticated, isLoading }}>
+        <AuthContext.Provider value={{ isAuthenticated, isLoading, isGuestMode }}>
             {children}
         </AuthContext.Provider>
     );

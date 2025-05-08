@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { tasksAPI } from "@/services/apiService";
 import { emitTaskUpdate } from "@/services/socketService";
+import { toast } from "react-hot-toast";
 
 // Define Task type
 export interface Task {
@@ -135,15 +136,16 @@ const useTaskStore = create<TaskState>()((set, get) => ({
 
       // Update state
       set({
-        tasks: response.data,
+        tasks: response.data || [],
         isLoading: false,
         pagination: {
           currentPage: Number(queryParams.page || get().pagination.currentPage),
           limit: Number(queryParams.limit || get().pagination.limit),
           totalPages: Math.ceil(
-            response.total / Number(queryParams.limit || get().pagination.limit)
+            (response.total || 0) /
+              Number(queryParams.limit || get().pagination.limit)
           ),
-          total: response.total,
+          total: response.total || 0,
         },
       });
 
@@ -155,8 +157,16 @@ const useTaskStore = create<TaskState>()((set, get) => ({
       set({
         isLoading: false,
         error: errorMessage,
+        tasks: [], // Ensure we set an empty array instead of undefined
       });
-      throw error;
+
+      return {
+        success: false,
+        count: 0,
+        pagination: {},
+        total: 0,
+        data: [],
+      };
     }
   },
 
@@ -181,6 +191,12 @@ const useTaskStore = create<TaskState>()((set, get) => ({
         isLoading: false,
         error: errorMessage,
       });
+
+      // If in development mode, show toast error
+      if (process.env.NODE_ENV === "development") {
+        toast.error(`Error: ${errorMessage}`);
+      }
+
       throw error;
     }
   },
@@ -197,6 +213,9 @@ const useTaskStore = create<TaskState>()((set, get) => ({
 
       set({ isLoading: false });
 
+      // Show success toast
+      toast.success("Task created successfully");
+
       return response.data;
     } catch (error: unknown) {
       const errorMessage =
@@ -206,6 +225,7 @@ const useTaskStore = create<TaskState>()((set, get) => ({
         isLoading: false,
         error: errorMessage,
       });
+
       throw error;
     }
   },
@@ -215,7 +235,17 @@ const useTaskStore = create<TaskState>()((set, get) => ({
     try {
       set({ isLoading: true, error: null });
 
-      const response = await tasksAPI.updateTask(id, taskData);
+      // Make sure we're sending clean data
+      const cleanedData = { ...taskData };
+
+      // Remove undefined values to prevent validation errors
+      Object.keys(cleanedData).forEach((key) => {
+        if (cleanedData[key] === undefined) {
+          delete cleanedData[key];
+        }
+      });
+
+      const response = await tasksAPI.updateTask(id, cleanedData);
 
       // Update state if the current task is being viewed
       const currentTask = get().task;
@@ -231,6 +261,9 @@ const useTaskStore = create<TaskState>()((set, get) => ({
 
       set({ isLoading: false });
 
+      // Show success toast
+      toast.success("Task updated successfully");
+
       return response.data;
     } catch (error: unknown) {
       const errorMessage =
@@ -240,6 +273,7 @@ const useTaskStore = create<TaskState>()((set, get) => ({
         isLoading: false,
         error: errorMessage,
       });
+
       throw error;
     }
   },
@@ -261,6 +295,11 @@ const useTaskStore = create<TaskState>()((set, get) => ({
       }
 
       set({ isLoading: false });
+
+      // Show success toast
+      toast.success("Task deleted successfully");
+
+      return Promise.resolve();
     } catch (error: unknown) {
       const errorMessage =
         error instanceof Error ? error.message : "Failed to delete task";
@@ -269,7 +308,8 @@ const useTaskStore = create<TaskState>()((set, get) => ({
         isLoading: false,
         error: errorMessage,
       });
-      throw error;
+
+      return Promise.reject(error);
     }
   },
 
@@ -289,15 +329,16 @@ const useTaskStore = create<TaskState>()((set, get) => ({
       const response = await tasksAPI.getAssignedTasks(queryParams);
 
       set({
-        tasks: response.data,
+        tasks: response.data || [],
         isLoading: false,
         pagination: {
           currentPage: Number(queryParams.page || get().pagination.currentPage),
           limit: Number(queryParams.limit || get().pagination.limit),
           totalPages: Math.ceil(
-            response.total / Number(queryParams.limit || get().pagination.limit)
+            (response.total || 0) /
+              Number(queryParams.limit || get().pagination.limit)
           ),
-          total: response.total,
+          total: response.total || 0,
         },
       });
 
@@ -311,8 +352,16 @@ const useTaskStore = create<TaskState>()((set, get) => ({
       set({
         isLoading: false,
         error: errorMessage,
+        tasks: [], // Ensure we set an empty array instead of undefined
       });
-      throw error;
+
+      return {
+        success: false,
+        count: 0,
+        pagination: {},
+        total: 0,
+        data: [],
+      };
     }
   },
 
@@ -332,15 +381,16 @@ const useTaskStore = create<TaskState>()((set, get) => ({
       const response = await tasksAPI.getCreatedTasks(queryParams);
 
       set({
-        tasks: response.data,
+        tasks: response.data || [],
         isLoading: false,
         pagination: {
           currentPage: Number(queryParams.page || get().pagination.currentPage),
           limit: Number(queryParams.limit || get().pagination.limit),
           totalPages: Math.ceil(
-            response.total / Number(queryParams.limit || get().pagination.limit)
+            (response.total || 0) /
+              Number(queryParams.limit || get().pagination.limit)
           ),
-          total: response.total,
+          total: response.total || 0,
         },
       });
 
@@ -354,8 +404,16 @@ const useTaskStore = create<TaskState>()((set, get) => ({
       set({
         isLoading: false,
         error: errorMessage,
+        tasks: [], // Ensure we set an empty array instead of undefined
       });
-      throw error;
+
+      return {
+        success: false,
+        count: 0,
+        pagination: {},
+        total: 0,
+        data: [],
+      };
     }
   },
 
@@ -375,15 +433,16 @@ const useTaskStore = create<TaskState>()((set, get) => ({
       const response = await tasksAPI.getOverdueTasks(queryParams);
 
       set({
-        tasks: response.data,
+        tasks: response.data || [],
         isLoading: false,
         pagination: {
           currentPage: Number(queryParams.page || get().pagination.currentPage),
           limit: Number(queryParams.limit || get().pagination.limit),
           totalPages: Math.ceil(
-            response.total / Number(queryParams.limit || get().pagination.limit)
+            (response.total || 0) /
+              Number(queryParams.limit || get().pagination.limit)
           ),
-          total: response.total,
+          total: response.total || 0,
         },
       });
 
@@ -397,8 +456,16 @@ const useTaskStore = create<TaskState>()((set, get) => ({
       set({
         isLoading: false,
         error: errorMessage,
+        tasks: [], // Ensure we set an empty array instead of undefined
       });
-      throw error;
+
+      return {
+        success: false,
+        count: 0,
+        pagination: {},
+        total: 0,
+        data: [],
+      };
     }
   },
 
@@ -418,15 +485,16 @@ const useTaskStore = create<TaskState>()((set, get) => ({
       const response = await tasksAPI.getTasksDueToday(queryParams);
 
       set({
-        tasks: response.data,
+        tasks: response.data || [],
         isLoading: false,
         pagination: {
           currentPage: Number(queryParams.page || get().pagination.currentPage),
           limit: Number(queryParams.limit || get().pagination.limit),
           totalPages: Math.ceil(
-            response.total / Number(queryParams.limit || get().pagination.limit)
+            (response.total || 0) /
+              Number(queryParams.limit || get().pagination.limit)
           ),
-          total: response.total,
+          total: response.total || 0,
         },
       });
 
@@ -440,8 +508,16 @@ const useTaskStore = create<TaskState>()((set, get) => ({
       set({
         isLoading: false,
         error: errorMessage,
+        tasks: [], // Ensure we set an empty array instead of undefined
       });
-      throw error;
+
+      return {
+        success: false,
+        count: 0,
+        pagination: {},
+        total: 0,
+        data: [],
+      };
     }
   },
 

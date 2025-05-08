@@ -7,11 +7,11 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowRightIcon, CheckCircleIcon, UserGroupIcon, ChartBarIcon } from '@heroicons/react/24/outline';
 import useAuthStore from '@/store/authStore';
-// import Img from '../../public/dashboard-preview.png'
+import { toast } from 'react-hot-toast';
 
 export default function Home() {
   const router = useRouter();
-  const { isAuthenticated, isLoading } = useAuthStore();
+  const { isAuthenticated, isLoading, guestLogin } = useAuthStore();
 
   // Redirect to dashboard if authenticated
   useEffect(() => {
@@ -19,6 +19,17 @@ export default function Home() {
       router.push('/dashboard');
     }
   }, [isAuthenticated, isLoading, router]);
+
+  // Handle guest login
+  const handleGuestLogin = async () => {
+    try {
+      await guestLogin();
+      router.push('/dashboard');
+    } catch (error) {
+      console.error('Guest login error:', error);
+      toast.error('Failed to login as guest. Please try again.');
+    }
+  };
 
   // Animation variants
   const containerVariants = {
@@ -100,6 +111,14 @@ export default function Home() {
                         Login
                       </Link>
                     </div>
+                    <div className="mt-3 sm:mt-0 sm:ml-3">
+                      <button
+                        onClick={handleGuestLogin}
+                        className="w-full flex items-center justify-center px-8 py-3 border border-gray-300 text-base font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 md:py-4 md:text-lg md:px-10"
+                      >
+                        Try as Guest
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -108,7 +127,7 @@ export default function Home() {
                   <div className="relative block w-full bg-white rounded-lg shadow-lg overflow-hidden">
                     <img
                       className="w-full"
-                      src="./dashboard-preview.png"
+                      src="/dashboard-preview.png"
                       alt="Dashboard Preview"
                     />
                   </div>

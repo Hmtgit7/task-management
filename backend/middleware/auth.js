@@ -8,7 +8,8 @@ const config = require("../config/config");
 exports.protect = asyncHandler(async (req, res, next) => {
   let token;
 
-  console.log("Headers:", req.headers); // Debug log
+  // Debug log for authentication
+  console.log("Headers:", req.headers);
 
   // Get token from Authorization header
   if (
@@ -22,10 +23,27 @@ exports.protect = asyncHandler(async (req, res, next) => {
       token ? token.substring(0, 10) + "..." : "none"
     );
   }
+  // Also check if token exists in cookies
+  else if (req.cookies && req.cookies.token) {
+    token = req.cookies.token;
+    console.log("Token extracted from cookies");
+  }
 
   // Make sure token exists
   if (!token) {
     return next(new ErrorResponse("Not authorized to access this route", 401));
+  }
+
+  // Handle guest token
+  if (token === "guest-token") {
+    // Set guest user
+    req.user = {
+      _id: "guest-user",
+      name: "Guest User",
+      email: "guest@example.com",
+      role: "user",
+    };
+    return next();
   }
 
   try {
