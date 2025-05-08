@@ -48,6 +48,7 @@ npm run dev
 ## 🔍 Common Issues & Solutions
 
 ### No Tasks Displaying
+
 If you're seeing "No description provided," "Unassigned," etc. when viewing tasks:
 
 1. Ensure MongoDB is running and properly connected
@@ -56,12 +57,14 @@ If you're seeing "No description provided," "Unassigned," etc. when viewing task
 4. Check browser console for API errors
 
 ### Guest Mode Not Working
+
 If guest login fails:
 
 1. Ensure the auth middleware properly handles the 'guest-token'
 2. Check the authentication controller for the guest login flow
 
 ### Connection Issues
+
 If you see "Not authorized to access this route" errors:
 
 1. Verify your JWT token is being passed correctly in the Authorization header
@@ -82,11 +85,13 @@ If you see "Not authorized to access this route" errors:
 ## 🛠️ Tech Stack
 
 ### Backend
+
 - Node.js, Express, MongoDB
 - JWT Authentication
 - Socket.IO for real-time updates
 
 ### Frontend
+
 - Next.js (React)
 - Tailwind CSS
 - Zustand for state management
@@ -98,8 +103,9 @@ If you see "Not authorized to access this route" errors:
 task-management/
 ├── backend/          # Express.js API server
 ├── frontend/         # Next.js frontend application
-├── README.md         # Main documentation
-└── .gitignore        # Git ignore file
+├── .gitignore        # Git ignore file
+├── docker-compose.yml # Docker configuration
+└── README.md         # Main documentation
 ```
 
 ## 🤝 Contributing
