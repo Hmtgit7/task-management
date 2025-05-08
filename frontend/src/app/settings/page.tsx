@@ -5,25 +5,48 @@ import { motion } from 'framer-motion';
 import { toast } from 'react-hot-toast';
 import { Switch } from '@headlessui/react';
 import {
-    Cog6ToothIcon,
     BellIcon,
     MoonIcon,
     EnvelopeIcon,
-    ClockIcon,
     ArrowPathIcon,
     CheckIcon
 } from '@heroicons/react/24/outline';
 import AppLayout from '@/components/layouts/AppLayout';
 import useNotificationStore from '@/store/notificationStore';
 
+interface EmailPreferences {
+    taskAssigned: boolean;
+    taskUpdated: boolean;
+    taskCompleted: boolean;
+    taskOverdue: boolean;
+    dailySummary: boolean;
+}
+
+interface InAppPreferences {
+    taskAssigned: boolean;
+    taskUpdated: boolean;
+    taskCompleted: boolean;
+    taskOverdue: boolean;
+    comments: boolean;
+}
+
+interface FormValues {
+    email: EmailPreferences;
+    inApp: InAppPreferences;
+    muteAll: boolean;
+    quietHoursStart: string;
+    quietHoursEnd: string;
+    timezone: string;
+}
+
 const SettingsPage: React.FC = () => {
-    const { preferences, fetchPreferences, updatePreferences, isLoading, error } = useNotificationStore();
+    const { preferences, fetchPreferences, updatePreferences, isLoading } = useNotificationStore();
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [timezones, setTimezones] = useState<string[]>([]);
 
     // Local state for form values
-    const [formValues, setFormValues] = useState({
+    const [formValues, setFormValues] = useState<FormValues>({
         email: {
             taskAssigned: true,
             taskUpdated: true,
@@ -86,18 +109,18 @@ const SettingsPage: React.FC = () => {
     }, []);
 
     // Handle form changes
-    const handleChange = (section: string, field: string, value: boolean) => {
+    const handleChange = (section: 'email' | 'inApp', field: string, value: boolean) => {
         setFormValues(prev => ({
             ...prev,
             [section]: {
-                ...prev[section as keyof typeof prev],
+                ...prev[section],
                 [field]: value
             }
         }));
     };
 
     // Handle time changes
-    const handleTimeChange = (field: string, value: string) => {
+    const handleTimeChange = (field: 'quietHoursStart' | 'quietHoursEnd', value: string) => {
         setFormValues(prev => ({
             ...prev,
             [field]: value
