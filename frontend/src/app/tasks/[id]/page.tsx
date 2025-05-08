@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { format, isAfter } from 'date-fns';
+import { format, isAfter, parseISO } from 'date-fns';
 import { motion } from 'framer-motion';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
@@ -99,10 +99,10 @@ const TaskDetailPage: React.FC = () => {
     };
 
     // Format date for display with error handling
-    const formatDate = (date: string) => {
-        if (!date) return 'N/A';
+    const formatDate = (date: string | null | undefined) => {
+        if (!date) return 'Not set';
         try {
-            return format(new Date(date), 'MMM d, yyyy');
+            return format(parseISO(date), 'MMM d, yyyy');
         } catch (error) {
             console.error('Error formatting date:', date, error);
             return 'Invalid date';
@@ -113,7 +113,7 @@ const TaskDetailPage: React.FC = () => {
     const isOverdue = task &&
         task.status !== 'completed' &&
         task.dueDate &&
-        isAfter(new Date(), new Date(task.dueDate));
+        isAfter(new Date(), parseISO(task.dueDate));
 
     // Animation variants
     const containerVariants = {
@@ -215,7 +215,7 @@ const TaskDetailPage: React.FC = () => {
                                             task.status === 'review' ? 'status-review' :
                                                 isOverdue ? 'bg-red-100 text-red-800' : 'status-todo'
                                         }`}>
-                                        {task.status === 'todo' && isOverdue ? 'Overdue' : (task.status ? task.status.replace('-', ' ') : 'Unknown')}
+                                        {task.status === 'todo' && isOverdue ? 'Overdue' : (task.status ? task.status.replace('-', ' ') : 'To Do')}
                                     </span>
 
                                     <span className={`priority-badge ${task.priority === 'urgent' ? 'bg-red-100 text-red-800' :
@@ -223,7 +223,7 @@ const TaskDetailPage: React.FC = () => {
                                             task.priority === 'medium' ? 'priority-medium' :
                                                 'priority-low'
                                         }`}>
-                                        {task.priority || 'Unknown'}
+                                        {task.priority || 'Medium'}
                                     </span>
                                 </div>
                             </div>
@@ -239,7 +239,7 @@ const TaskDetailPage: React.FC = () => {
                                     <div className="flex items-center mt-2">
                                         <CalendarIcon className="w-5 h-5 mr-2 text-gray-400" />
                                         <p className={`${isOverdue ? 'text-red-600 font-medium' : 'text-gray-700'}`}>
-                                            {formatDate(task.dueDate)}
+                                            {task.dueDate ? formatDate(task.dueDate) : 'Not set'}
                                             {isOverdue && ' (Overdue)'}
                                         </p>
                                     </div>
@@ -249,7 +249,7 @@ const TaskDetailPage: React.FC = () => {
                                     <h2 className="text-sm font-medium text-gray-500">Created At</h2>
                                     <div className="flex items-center mt-2">
                                         <ClockIcon className="w-5 h-5 mr-2 text-gray-400" />
-                                        <p className="text-gray-700">{formatDate(task.createdAt)}</p>
+                                        <p className="text-gray-700">{task.createdAt ? formatDate(task.createdAt) : 'Not available'}</p>
                                     </div>
                                 </div>
 

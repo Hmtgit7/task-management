@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { format, isAfter } from 'date-fns';
+import { format, isAfter, parseISO } from 'date-fns';
 import { motion } from 'framer-motion';
 import {
     ClockIcon,
@@ -17,8 +17,27 @@ interface TaskCardProps {
 }
 
 const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
-    // Check if task is overdue
-    const isOverdue = task.status !== 'completed' && isAfter(new Date(), new Date(task.dueDate));
+    // Check if task is overdue - with proper error handling
+    const isOverdue = () => {
+        try {
+            if (!task.dueDate) return false;
+            return task.status !== 'completed' && isAfter(new Date(), parseISO(task.dueDate));
+        } catch (error) {
+            console.error('Error checking overdue status:', error);
+            return false;
+        }
+    };
+
+    // Format date safely
+    const formatDate = (dateString: string | undefined | null) => {
+        if (!dateString) return 'No date';
+        try {
+            return format(parseISO(dateString), 'MMM d, yyyy');
+        } catch (error) {
+            console.error('Error formatting date:', error);
+            return 'Invalid date';
+        }
+    };
 
     // Get status icon
     const getStatusIcon = () => {
@@ -30,7 +49,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
             case 'review':
                 return <ClockIcon className="w-5 h-5 text-purple-500" />;
             default:
-                return isOverdue
+                return isOverdue()
                     ? <ExclamationTriangleIcon className="w-5 h-5 text-red-500" />
                     : <ClockIcon className="w-5 h-5 text-gray-500" />;
         }
@@ -46,7 +65,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
             case 'review':
                 return 'status-badge status-review';
             default:
-                return `status-badge ${isOverdue ? 'bg-red-100 text-red-800' : 'status-todo'}`;
+                return `status-badge ${isOverdue() ? 'bg-red-100 text-red-800' : 'status-todo'}`;
         }
     };
 
@@ -81,18 +100,21 @@ const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
                             href={`/tasks/${task._id}`}
                             className="text-lg font-medium text-gray-900 hover:text-primary-600"
                         >
-                            {task.title}
+                            {task.title || 'Untitled Task'}
                         </Link>
-                        <p className="mt-1 text-sm text-gray-500 line-clamp-2">{task.description}</p>
+                        <p className="mt-1 text-sm text-gray-500 line-clamp-2">
+                            {task.description || 'No description provided'}
+                        </p>
                     </div>
                 </div>
 
                 <div className="flex flex-wrap items-center mt-3 sm:mt-0 gap-2">
                     <span className={getStatusBadgeClass()}>
-                        {task.status === 'todo' && isOverdue ? 'Overdue' : task.status.replace('-', ' ')}
+                        {task.status === 'todo' && isOverdue() ? 'Overdue' :
+                            task.status ? task.status.replace('-', ' ') : 'Todo'}
                     </span>
                     <span className={getPriorityBadgeClass()}>
-                        {task.priority}
+                        {task.priority || 'Low'}
                     </span>
                 </div>
             </div>
@@ -100,17 +122,17 @@ const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between mt-4 text-sm text-gray-500">
                 <div className="flex items-center">
                     <ClockIcon className="w-4 h-4 mr-1" />
-                    Due: {format(new Date(task.dueDate), 'MMM d, yyyy')}
+                    Due: {task.dueDate ? formatDate(task.dueDate) : 'Not set'}
                 </div>
 
                 <div className="mt-2 sm:mt-0 flex items-center">
                     <div className="flex-shrink-0 mr-1">
                         <div className="flex items-center justify-center w-5 h-5 text-xs rounded-full bg-primary-100 text-primary-800">
-                            {task.assignedTo.name.charAt(0).toUpperCase()}
+                            {task.assignedTo?.name ? task.assignedTo.name.charAt(0).toUpperCase() : 'U'}
                         </div>
                     </div>
                     <span className="truncate">
-                        Assigned to: {task.assignedTo.name}
+                        Assigned to: {task.assignedTo?.name || 'Unassigned'}
                     </span>
                 </div>
             </div>
