@@ -1,17 +1,17 @@
 'use client';
 
-import React, { useRef, useEffect } from 'react';
-import Link from 'next/link';
-import { motion } from 'framer-motion';
-import { format } from 'date-fns';
 import {
+    ArrowPathIcon,
     BellIcon,
+    ChatBubbleLeftEllipsisIcon,
     CheckCircleIcon,
     ClockIcon,
-    ExclamationCircleIcon,
-    ChatBubbleLeftEllipsisIcon,
-    ArrowPathIcon
-} from '@heroicons/react/24/outline';
+    ExclamationCircleIcon} from '@heroicons/react/24/outline';
+import { format } from 'date-fns';
+import { motion } from 'framer-motion';
+import Link from 'next/link';
+import React, { useEffect,useRef } from 'react';
+
 import useNotificationStore from '@/store/notificationStore';
 
 interface NotificationsPopoverProps {

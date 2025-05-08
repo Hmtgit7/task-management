@@ -1,26 +1,27 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { format, isAfter, parseISO } from 'date-fns';
-import { motion } from 'framer-motion';
-import { toast } from 'react-hot-toast';
 import {
+    ArrowLeftIcon,
     ArrowPathIcon,
-    ClockIcon,
-    CheckIcon,
-    ExclamationTriangleIcon,
     CalendarIcon,
-    UserCircleIcon,
+    CheckIcon,
+    ClockIcon,
+    ExclamationCircleIcon,
+    PencilIcon,
     TagIcon,
     TrashIcon,
-    PencilIcon,
-    ArrowLeftIcon,
-    ExclamationCircleIcon
-} from '@heroicons/react/24/outline';
+    UserCircleIcon} from '@heroicons/react/24/outline';
+import { format, isAfter, parseISO } from 'date-fns';
+import { motion } from 'framer-motion';
+import { useParams, useRouter } from 'next/navigation';
+import React, { useEffect, useState } from 'react';
+import { toast } from 'react-hot-toast';
+
 import AppLayout from '@/components/layouts/AppLayout';
-import useTaskStore from '@/store/taskStore';
+
 import useAuthStore from '@/store/authStore';
+import useTaskStore from '@/store/taskStore';
+
 import { joinTaskRoom, leaveTaskRoom } from '@/services/socketService';
 
 const TaskDetailPage: React.FC = () => {

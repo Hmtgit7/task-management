@@ -1,13 +1,13 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { ArrowRightIcon, ChartBarIcon,CheckCircleIcon, UserGroupIcon } from '@heroicons/react/24/outline';
 import { motion } from 'framer-motion';
-import Image from 'next/image';
 import Link from 'next/link';
-import { ArrowRightIcon, CheckCircleIcon, UserGroupIcon, ChartBarIcon } from '@heroicons/react/24/outline';
-import useAuthStore from '@/store/authStore';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 import { toast } from 'react-hot-toast';
+
+import useAuthStore from '@/store/authStore';
 
 export default function Home() {
   const router = useRouter();

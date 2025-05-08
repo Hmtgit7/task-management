@@ -1,13 +1,14 @@
 'use client';
 
-import React, { useState } from 'react';
+import { EyeIcon, EyeSlashIcon, UserPlusIcon } from '@heroicons/react/24/outline';
+import { ErrorMessage,Field, Form, Formik } from 'formik';
+import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Formik, Form, Field, ErrorMessage } from 'formik';
-import * as Yup from 'yup';
-import { motion } from 'framer-motion';
+import React, { useState } from 'react';
 import { toast } from 'react-hot-toast';
-import { EyeIcon, EyeSlashIcon, UserPlusIcon } from '@heroicons/react/24/outline';
+import * as Yup from 'yup';
+
 import useAuthStore from '@/store/authStore';
 
 // Registration validation schema

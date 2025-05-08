@@ -1,17 +1,18 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
-import { toast } from 'react-hot-toast';
 import { Switch } from '@headlessui/react';
 import {
-    BellIcon,
-    MoonIcon,
-    EnvelopeIcon,
     ArrowPathIcon,
-    CheckIcon
-} from '@heroicons/react/24/outline';
+    BellIcon,
+    CheckIcon,
+    EnvelopeIcon,
+    MoonIcon} from '@heroicons/react/24/outline';
+import { motion } from 'framer-motion';
+import React, { useEffect, useState } from 'react';
+import { toast } from 'react-hot-toast';
+
 import AppLayout from '@/components/layouts/AppLayout';
+
 import useNotificationStore from '@/store/notificationStore';
 
 interface EmailPreferences {

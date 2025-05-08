@@ -1,28 +1,29 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
 import {
     ArrowPathIcon,
-    ChartBarIcon,
-    ChartPieIcon,
     CalendarIcon,
-    UserGroupIcon
+    ChartBarIcon,
+    ChartPieIcon
 } from '@heroicons/react/24/outline';
-import { Line, Bar, Pie } from 'react-chartjs-2';
 import {
-    Chart as ChartJS,
-    CategoryScale,
-    LinearScale,
-    PointElement,
-    LineElement,
-    BarElement,
     ArcElement,
+    BarElement,
+    CategoryScale,
+    Chart as ChartJS,
+    Legend,
+    LinearScale,
+    LineElement,
+    PointElement,
     Title,
     Tooltip,
-    Legend,
 } from 'chart.js';
+import { motion } from 'framer-motion';
+import React, { useEffect, useState } from 'react';
+import { Bar, Line, Pie } from 'react-chartjs-2';
+
 import AppLayout from '@/components/layouts/AppLayout';
+
 import useAnalyticsStore from '@/store/analyticsStore';
 import useAuthStore from '@/store/authStore';
 

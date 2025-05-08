@@ -1,9 +1,11 @@
 'use client';
 
-import { useEffect, createContext, useContext, useState } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
-import useAuthStore from '@/store/authStore';
+import { usePathname,useRouter } from 'next/navigation';
+import { createContext, useContext, useEffect, useState } from 'react';
+
 import LoadingScreen from '@/components/common/LoadingScreen';
+
+import useAuthStore from '@/store/authStore';
 
 // Create auth context
 interface AuthContextType {

@@ -1,21 +1,22 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
-import { format, formatDistanceToNow } from 'date-fns';
 import {
-    BellIcon,
-    CheckIcon,
     ArrowPathIcon,
-    TrashIcon,
+    BellIcon,
+    ChatBubbleLeftEllipsisIcon,
     CheckCircleIcon,
+    CheckIcon,
     ClockIcon,
     ExclamationCircleIcon,
-    ChatBubbleLeftEllipsisIcon,
-    InformationCircleIcon
-} from '@heroicons/react/24/outline';
+    InformationCircleIcon,
+    TrashIcon} from '@heroicons/react/24/outline';
+import { format, formatDistanceToNow } from 'date-fns';
+import { motion } from 'framer-motion';
 import Link from 'next/link';
+import React, { useEffect, useState } from 'react';
+
 import AppLayout from '@/components/layouts/AppLayout';
+
 import useNotificationStore from '@/store/notificationStore';
 
 const NotificationsPage: React.FC = () => {

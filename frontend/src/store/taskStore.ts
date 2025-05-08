@@ -1,7 +1,8 @@
+import { toast } from "react-hot-toast";
 import { create } from "zustand";
+
 import { tasksAPI } from "@/services/apiService";
 import { emitTaskUpdate } from "@/services/socketService";
-import { toast } from "react-hot-toast";
 
 // Define Task type
 export interface Task {

@@ -1,25 +1,27 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
-    HomeIcon,
-    CheckCircleIcon,
-    ClockIcon,
-    PlusCircleIcon,
-    BellIcon,
-    ChartBarIcon,
-    Cog6ToothIcon,
-    UserGroupIcon,
     ArrowLeftOnRectangleIcon,
     Bars3Icon,
+    BellIcon,
+    ChartBarIcon,
+    CheckCircleIcon,
+    ClockIcon,
+    Cog6ToothIcon,
+    HomeIcon,
+    PlusCircleIcon,
+    UserGroupIcon,
     XMarkIcon
 } from '@heroicons/react/24/outline';
+import { AnimatePresence,motion } from 'framer-motion';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import React, { useEffect,useState } from 'react';
+
+import NotificationsPopover from '@/components/notification/NotificationsPopover';
+
 import useAuthStore from '@/store/authStore';
 import useNotificationStore from '@/store/notificationStore';
-import NotificationsPopover from '@/components/notification/NotificationsPopover';
 
 interface AppLayoutProps {
     children: React.ReactNode;

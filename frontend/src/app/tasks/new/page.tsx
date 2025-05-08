@@ -1,22 +1,21 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { Formik, Form, Field, ErrorMessage } from 'formik';
-import * as Yup from 'yup';
-import { toast } from 'react-hot-toast';
-import { motion } from 'framer-motion';
 import {
     ArrowLeftIcon,
-    PlusCircleIcon,
     ArrowPathIcon,
-    UserGroupIcon
+    PlusCircleIcon
 } from '@heroicons/react/24/outline';
+import { ErrorMessage,Field, Form, Formik } from 'formik';
+import { motion } from 'framer-motion';
+import { useRouter } from 'next/navigation';
+import React, { useEffect,useState } from 'react';
+import { toast } from 'react-hot-toast';
+import * as Yup from 'yup';
+
 import AppLayout from '@/components/layouts/AppLayout';
-import useTaskStore from '@/store/taskStore';
+
 import useAuthStore from '@/store/authStore';
-import { useQuery } from 'react-query';
-import axios from 'axios';
+import useTaskStore from '@/store/taskStore';
 
 // Task creation validation schema
 const TaskCreationSchema = Yup.object().shape({

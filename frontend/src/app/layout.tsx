@@ -1,9 +1,11 @@
-import '@/styles/globals.css';
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import { Toaster } from 'react-hot-toast';
-import QueryProvider from '@/providers/QueryProvider';
+
+import '@/styles/globals.css';
+
 import AuthProvider from '@/providers/AuthProvider';
+import QueryProvider from '@/providers/QueryProvider';
 import SocketProvider from '@/providers/SocketProvider';
 
 const inter = Inter({ subsets: ['latin'] });

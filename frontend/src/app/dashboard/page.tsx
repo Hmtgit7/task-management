@@ -1,23 +1,25 @@
 'use client';
 
-import React, { useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { format } from 'date-fns';
 import {
+    ArrowPathIcon,
     CheckCircleIcon,
     ClockIcon,
     ExclamationTriangleIcon,
-    ArrowPathIcon,
     PlusCircleIcon
 } from '@heroicons/react/24/outline';
+import { format } from 'date-fns';
+import { motion } from 'framer-motion';
+import Link from 'next/link';
+import React, { useEffect } from 'react';
+
+import TaskPriorityChart from '@/components/dashboard/TaskPriorityChart';
+import TaskStatusChart from '@/components/dashboard/TaskStatusChart';
 import AppLayout from '@/components/layouts/AppLayout';
 import TaskCard from '@/components/tasks/TaskCard';
-import TaskStatusChart from '@/components/dashboard/TaskStatusChart';
-import TaskPriorityChart from '@/components/dashboard/TaskPriorityChart';
+
 import useAnalyticsStore from '@/store/analyticsStore';
-import useTaskStore from '@/store/taskStore';
 import useAuthStore from '@/store/authStore';
-import Link from 'next/link';
+import useTaskStore from '@/store/taskStore';
 
 const DashboardPage: React.FC = () => {
     const { dashboardStats, fetchDashboardStats, isLoading: isLoadingStats } = useAnalyticsStore();

@@ -1,11 +1,13 @@
 'use client';
 
-import { useEffect, createContext, useContext } from 'react';
-import { Socket } from 'socket.io-client';
+import { createContext, useContext,useEffect } from 'react';
 import { toast } from 'react-hot-toast';
+import { Socket } from 'socket.io-client';
+
 import useAuthStore from '@/store/authStore';
 import useNotificationStore from '@/store/notificationStore';
-import { initializeSocket, getSocket } from '@/services/socketService';
+
+import { getSocket,initializeSocket } from '@/services/socketService';
 
 // Create socket context
 interface SocketContextType {

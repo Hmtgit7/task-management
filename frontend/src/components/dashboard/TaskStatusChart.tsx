@@ -1,15 +1,15 @@
 'use client';
 
+import {
+    ArcElement,
+    CategoryScale,
+    Chart as ChartJS,
+    Legend,
+    LinearScale,
+    Tooltip,
+} from 'chart.js';
 import React from 'react';
 import { Pie } from 'react-chartjs-2';
-import {
-    Chart as ChartJS,
-    ArcElement,
-    Tooltip,
-    Legend,
-    CategoryScale,
-    LinearScale,
-} from 'chart.js';
 
 // Register Chart.js components
 ChartJS.register(

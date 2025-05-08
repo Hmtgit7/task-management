@@ -1,7 +1,8 @@
+import { toast } from "react-hot-toast";
 import { create } from "zustand";
+
 import { notificationsAPI } from "@/services/apiService";
 import { getSocket } from "@/services/socketService";
-import { toast } from "react-hot-toast";
 
 // Define Notification type
 export interface Notification {

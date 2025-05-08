@@ -1,15 +1,16 @@
 'use client';
 
-import React from 'react';
-import Link from 'next/link';
-import { format, isAfter, parseISO } from 'date-fns';
-import { motion } from 'framer-motion';
 import {
-    ClockIcon,
-    CheckIcon,
     ArrowPathIcon,
+    CheckIcon,
+    ClockIcon,
     ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
+import { format, isAfter, parseISO } from 'date-fns';
+import { motion } from 'framer-motion';
+import Link from 'next/link';
+import React from 'react';
+
 import { Task } from '@/store/taskStore';
 
 interface TaskCardProps {

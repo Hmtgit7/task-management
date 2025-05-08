@@ -1,18 +1,20 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { motion } from 'framer-motion';
 import {
-    PlusCircleIcon,
-    MagnifyingGlassIcon,
-    FunnelIcon,
     ArrowPathIcon,
     ChevronLeftIcon,
     ChevronRightIcon,
+    FunnelIcon,
+    MagnifyingGlassIcon,
+    PlusCircleIcon,
 } from '@heroicons/react/24/outline';
+import { motion } from 'framer-motion';
+import Link from 'next/link';
+import React, { useEffect, useState } from 'react';
+
 import AppLayout from '@/components/layouts/AppLayout';
 import TaskCard from '@/components/tasks/TaskCard';
+
 import useTaskStore from '@/store/taskStore';
 
 const MyTasksPage: React.FC = () => {

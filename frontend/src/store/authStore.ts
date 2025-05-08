@@ -1,8 +1,9 @@
+import { toast } from "react-hot-toast";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+
 import { authAPI } from "@/services/apiService";
 import { disconnectSocket, initializeSocket } from "@/services/socketService";
-import { toast } from "react-hot-toast";
 
 // Define User type
 interface User {
@@ -129,7 +130,7 @@ const useAuthStore = create<AuthState>()(
               _id: "guest-user",
               name: "Guest User",
               email: "guest@example.com",
-              role: "user" as "user", // Type assertion to match User type
+              role: "user" as const, // Type assertion to match User type
             },
             token: "guest-token",
           });

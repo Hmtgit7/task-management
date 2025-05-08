@@ -1,7 +1,7 @@
 'use client';
 
-import { QueryClient, QueryClientProvider } from 'react-query';
 import { useState } from 'react';
+import { QueryClient, QueryClientProvider } from 'react-query';
 
 // Create a client
 const QueryProvider = ({ children }: { children: React.ReactNode }) => {
