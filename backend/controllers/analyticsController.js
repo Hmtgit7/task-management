@@ -251,7 +251,7 @@ exports.getUserAnalytics = asyncHandler(async (req, res, next) => {
   // Tasks by priority
   const tasksByPriority = await Task.aggregate([
     {
-      $match: { assignedTo: mongoose.Types.ObjectId(userId) },
+      $match: { assignedTo: new mongoose.Types.ObjectId(userId) },
     },
     {
       $group: {
@@ -264,7 +264,7 @@ exports.getUserAnalytics = asyncHandler(async (req, res, next) => {
   // Tasks by status
   const tasksByStatus = await Task.aggregate([
     {
-      $match: { assignedTo: mongoose.Types.ObjectId(userId) },
+      $match: { assignedTo: new mongoose.Types.ObjectId(userId) },
     },
     {
       $group: {
@@ -278,7 +278,7 @@ exports.getUserAnalytics = asyncHandler(async (req, res, next) => {
   const recentCompletedTasks = await Task.aggregate([
     {
       $match: {
-        assignedTo: mongoose.Types.ObjectId(userId),
+        assignedTo: new mongoose.Types.ObjectId(userId),
         completedAt: { $exists: true, $ne: null, $gte: startDate },
       },
     },
@@ -328,7 +328,11 @@ exports.getDashboardStats = asyncHandler(async (req, res, next) => {
     const assignedTasksCount = await Task.countDocuments({
       assignedTo: userId,
     });
-    const createdTasksCount = await Task.countDocuments({ createdBy: userId });
+
+    const createdTasksCount = await Task.countDocuments({
+      createdBy: userId,
+    });
+
     const overdueTasksCount = await Task.countDocuments({
       assignedTo: userId,
       dueDate: { $lt: new Date() },
@@ -354,12 +358,13 @@ exports.getDashboardStats = asyncHandler(async (req, res, next) => {
       .populate({
         path: "createdBy",
         select: "name",
-      });
+      })
+      .lean();
 
     // Tasks by priority
     const tasksByPriority = await Task.aggregate([
       {
-        $match: { assignedTo: mongoose.Types.ObjectId(userId) },
+        $match: { assignedTo: new mongoose.Types.ObjectId(userId) },
       },
       {
         $group: {
@@ -372,7 +377,7 @@ exports.getDashboardStats = asyncHandler(async (req, res, next) => {
     // Tasks by status
     const tasksByStatus = await Task.aggregate([
       {
-        $match: { assignedTo: mongoose.Types.ObjectId(userId) },
+        $match: { assignedTo: new mongoose.Types.ObjectId(userId) },
       },
       {
         $group: {

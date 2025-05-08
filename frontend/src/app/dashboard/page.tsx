@@ -61,18 +61,6 @@ const DashboardPage: React.FC = () => {
     const today = new Date();
     const formattedDate = format(today, 'EEEE, MMMM d, yyyy');
 
-    // Loading state
-    if (isLoadingStats && !dashboardStats) {
-        return (
-            <AppLayout>
-                <div className="flex flex-col items-center justify-center h-full">
-                    <ArrowPathIcon className="w-10 h-10 text-primary-500 animate-spin" />
-                    <p className="mt-4 text-lg text-gray-600">Loading dashboard data...</p>
-                </div>
-            </AppLayout>
-        );
-    }
-
     // Initialize empty stats if they're undefined
     const stats = dashboardStats || {
         assignedTasksCount: 0,
@@ -118,7 +106,7 @@ const DashboardPage: React.FC = () => {
                                 <div className="ml-4">
                                     <p className="text-sm font-medium text-gray-500">Assigned Tasks</p>
                                     <p className="text-2xl font-semibold text-gray-900">
-                                        {stats.assignedTasksCount || 0}
+                                        {stats.assignedTasksCount}
                                     </p>
                                 </div>
                             </div>
@@ -138,7 +126,7 @@ const DashboardPage: React.FC = () => {
                                 <div className="ml-4">
                                     <p className="text-sm font-medium text-gray-500">Created Tasks</p>
                                     <p className="text-2xl font-semibold text-gray-900">
-                                        {stats.createdTasksCount || 0}
+                                        {stats.createdTasksCount}
                                     </p>
                                 </div>
                             </div>
@@ -158,7 +146,7 @@ const DashboardPage: React.FC = () => {
                                 <div className="ml-4">
                                     <p className="text-sm font-medium text-gray-500">Overdue Tasks</p>
                                     <p className="text-2xl font-semibold text-gray-900">
-                                        {stats.overdueTasksCount || 0}
+                                        {stats.overdueTasksCount}
                                     </p>
                                 </div>
                             </div>
@@ -178,7 +166,7 @@ const DashboardPage: React.FC = () => {
                                 <div className="ml-4">
                                     <p className="text-sm font-medium text-gray-500">Due Today</p>
                                     <p className="text-2xl font-semibold text-gray-900">
-                                        {stats.tasksDueToday || 0}
+                                        {stats.tasksDueToday}
                                     </p>
                                 </div>
                             </div>
@@ -255,9 +243,14 @@ const DashboardPage: React.FC = () => {
                                 View all
                             </Link>
                         </div>
-                        {dashboardStats?.recentAssignedTasks && dashboardStats.recentAssignedTasks.length > 0 ? (
+                        {isLoadingStats ? (
+                            <div className="flex items-center justify-center py-4">
+                                <ArrowPathIcon className="w-5 h-5 mr-2 text-primary-500 animate-spin" />
+                                <p className="text-gray-500">Loading activity...</p>
+                            </div>
+                        ) : stats.recentAssignedTasks && stats.recentAssignedTasks.length > 0 ? (
                             <div className="space-y-4">
-                                {dashboardStats.recentAssignedTasks.slice(0, 3).map((task) => (
+                                {stats.recentAssignedTasks.slice(0, 3).map((task) => (
                                     <div key={task._id} className="flex items-start p-3 border rounded-md">
                                         <div className="mr-3 text-primary-500">
                                             <CheckCircleIcon className="w-5 h-5" />
@@ -267,7 +260,7 @@ const DashboardPage: React.FC = () => {
                                                 {task.title}
                                             </Link>
                                             <p className="text-sm text-gray-500">
-                                                Assigned by {task.createdBy.name} on {format(new Date(task.createdAt), 'MMM d')}
+                                                Assigned by {task.createdBy?.name || 'Unknown'} on {task.createdAt ? format(new Date(task.createdAt), 'MMM d') : 'Unknown date'}
                                             </p>
                                         </div>
                                         <div className={`ml-auto px-2.5 py-0.5 rounded-full text-xs font-medium

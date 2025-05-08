@@ -37,16 +37,21 @@ const TaskStatusChart: React.FC<TaskStatusChartProps> = ({ data }) => {
             case 'completed':
                 return 'Completed';
             default:
-                return status;
+                return status || 'Unknown';
         }
     };
 
+    // Use default data if no data is provided
+    const chartData = data && data.length > 0 ? data : [
+        { _id: 'todo', count: 0 }
+    ];
+
     // Process data for chart
     const processedData = {
-        labels: data.map(item => formatStatusLabel(item._id)),
+        labels: chartData.map(item => formatStatusLabel(item._id)),
         datasets: [
             {
-                data: data.map(item => item.count),
+                data: chartData.map(item => item.count),
                 backgroundColor: [
                     '#e2e8f0', // todo - gray
                     '#93c5fd', // in-progress - blue
@@ -82,7 +87,7 @@ const TaskStatusChart: React.FC<TaskStatusChartProps> = ({ data }) => {
                         const label = context.label || '';
                         const value = context.raw || 0;
                         const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
-                        const percentage = Math.round((value / total) * 100);
+                        const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
                         return `${label}: ${value} (${percentage}%)`;
                     }
                 }
@@ -90,7 +95,7 @@ const TaskStatusChart: React.FC<TaskStatusChartProps> = ({ data }) => {
         },
     };
 
-    // If no data or empty array
+    // If no data or empty array, show a default message
     if (!data || data.length === 0) {
         return (
             <div className="flex flex-col items-center justify-center h-full">

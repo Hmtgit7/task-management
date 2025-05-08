@@ -29,13 +29,20 @@ interface TaskPriorityChartProps {
 const TaskPriorityChart: React.FC<TaskPriorityChartProps> = ({ data }) => {
     // Format priority labels for display
     const formatPriorityLabel = (priority: string) => {
-        return priority.charAt(0).toUpperCase() + priority.slice(1);
+        return priority ? priority.charAt(0).toUpperCase() + priority.slice(1) : 'Unknown';
     };
 
+    // Use default data if no data is provided
+    const chartData = data && data.length > 0 ? data : [
+        { _id: 'medium', count: 0 }
+    ];
+
     // Sort data by priority level
-    const sortedData = [...data].sort((a, b) => {
+    const sortedData = [...chartData].sort((a, b) => {
         const priorityOrder = { 'low': 0, 'medium': 1, 'high': 2, 'urgent': 3 };
-        return priorityOrder[a._id as keyof typeof priorityOrder] - priorityOrder[b._id as keyof typeof priorityOrder];
+        const aPriority = a._id || 'low';
+        const bPriority = b._id || 'low';
+        return (priorityOrder[aPriority as keyof typeof priorityOrder] || 0) - (priorityOrder[bPriority as keyof typeof priorityOrder] || 0);
     });
 
     // Process data for chart

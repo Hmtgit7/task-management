@@ -42,20 +42,17 @@ const SocketProvider = ({ children }: { children: React.ReactNode }) => {
 
     // Handle service worker messages for offline sync
     useEffect(() => {
-        if (typeof window !== 'undefined') {
+        if (typeof window !== 'undefined' && navigator.serviceWorker) {
             const handleServiceWorkerMessage = (event: MessageEvent) => {
                 if (event.data && event.data.type === 'SYNC_COMPLETED') {
-                    toast.success(`${event.data.synced} ${event.data.synced === 1 ? 'item' : 'items'} synchronized successfully!`);
-
-                    // Refresh data as needed
-                    // You could call your refresh functions here
+                    toast.success(`${event.data.synced} tasks synced successfully`);
                 }
             };
 
-            navigator.serviceWorker?.addEventListener('message', handleServiceWorkerMessage);
+            navigator.serviceWorker.addEventListener('message', handleServiceWorkerMessage);
 
             return () => {
-                navigator.serviceWorker?.removeEventListener('message', handleServiceWorkerMessage);
+                navigator.serviceWorker.removeEventListener('message', handleServiceWorkerMessage);
             };
         }
     }, []);

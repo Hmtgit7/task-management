@@ -62,6 +62,18 @@ interface AnalyticsState {
   clearError: () => void;
 }
 
+// Default values for dashboard stats
+const defaultDashboardStats: DashboardStats = {
+  assignedTasksCount: 0,
+  createdTasksCount: 0,
+  overdueTasksCount: 0,
+  tasksDueToday: 0,
+  recentAssignedTasks: [],
+  tasksByPriority: [],
+  tasksByStatus: [],
+  unreadNotifications: 0,
+};
+
 // Create analytics store
 const useAnalyticsStore = create<AnalyticsState>()((set) => ({
   dashboardStats: null,
@@ -77,6 +89,7 @@ const useAnalyticsStore = create<AnalyticsState>()((set) => ({
 
       const response = await analyticsAPI.getDashboardStats();
 
+      // If we get a successful response, update the store
       set({
         dashboardStats: response.data,
         isLoading: false,
@@ -84,12 +97,18 @@ const useAnalyticsStore = create<AnalyticsState>()((set) => ({
 
       return response.data;
     } catch (error: any) {
+      console.error("Dashboard stats error:", error);
+
+      // Set default values if the request fails
       set({
+        dashboardStats: defaultDashboardStats,
         isLoading: false,
         error:
           error.response?.data?.error || "Failed to fetch dashboard statistics",
       });
-      throw error;
+
+      // Return default values instead of throwing
+      return defaultDashboardStats;
     }
   },
 
@@ -107,11 +126,31 @@ const useAnalyticsStore = create<AnalyticsState>()((set) => ({
 
       return response.data;
     } catch (error: any) {
+      // Set a more friendly error message
+      const errorMessage =
+        error.response?.data?.error || "Failed to fetch user analytics";
+      console.error(errorMessage, error);
+
       set({
         isLoading: false,
-        error: error.response?.data?.error || "Failed to fetch user analytics",
+        error: errorMessage,
       });
-      throw error;
+
+      // Create a default response to avoid UI breaking
+      const defaultAnalytics: UserAnalytics = {
+        assignedTasks: 0,
+        createdTasks: 0,
+        completedTasks: 0,
+        overdueTasks: 0,
+        tasksCompletedOnTime: 0,
+        completionRate: 0,
+        onTimeCompletionRate: 0,
+        tasksByPriority: [],
+        tasksByStatus: [],
+        recentCompletedTasks: [],
+      };
+
+      return defaultAnalytics;
     }
   },
 
@@ -129,13 +168,30 @@ const useAnalyticsStore = create<AnalyticsState>()((set) => ({
 
       return response.data;
     } catch (error: any) {
+      // Set a more friendly error message
+      const errorMessage =
+        error.response?.data?.error ||
+        "Failed to fetch task completion analytics";
+      console.error(errorMessage, error);
+
       set({
         isLoading: false,
-        error:
-          error.response?.data?.error ||
-          "Failed to fetch task completion analytics",
+        error: errorMessage,
       });
-      throw error;
+
+      // Create a default response
+      const defaultAnalytics: TaskCompletionAnalytics = {
+        completedTasks: [],
+        overdueTasks: 0,
+        totalTasks: 0,
+        completedTasksCount: 0,
+        completionRate: 0,
+        userPerformance: [],
+        statusDistribution: [],
+        priorityDistribution: [],
+      };
+
+      return defaultAnalytics;
     }
   },
 

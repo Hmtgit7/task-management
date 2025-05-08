@@ -98,9 +98,15 @@ const TaskDetailPage: React.FC = () => {
         }
     };
 
-    // Format date for display
+    // Format date for display with error handling
     const formatDate = (date: string) => {
-        return format(new Date(date), 'MMM d, yyyy');
+        if (!date) return 'N/A';
+        try {
+            return format(new Date(date), 'MMM d, yyyy');
+        } catch (error) {
+            console.error('Error formatting date:', date, error);
+            return 'Invalid date';
+        }
     };
 
     // Check if task is overdue - with null check to prevent errors
@@ -202,14 +208,14 @@ const TaskDetailPage: React.FC = () => {
                     <motion.div variants={itemVariants} className="bg-white rounded-lg shadow-sm">
                         <div className="p-6">
                             <div className="flex items-start justify-between">
-                                <h1 className="text-2xl font-semibold text-gray-900">{task.title}</h1>
+                                <h1 className="text-2xl font-semibold text-gray-900">{task.title || 'Untitled Task'}</h1>
                                 <div className="flex space-x-2">
                                     <span className={`status-badge ${task.status === 'completed' ? 'status-completed' :
                                         task.status === 'in-progress' ? 'status-in-progress' :
                                             task.status === 'review' ? 'status-review' :
                                                 isOverdue ? 'bg-red-100 text-red-800' : 'status-todo'
                                         }`}>
-                                        {task.status === 'todo' && isOverdue ? 'Overdue' : task.status.replace('-', ' ')}
+                                        {task.status === 'todo' && isOverdue ? 'Overdue' : (task.status ? task.status.replace('-', ' ') : 'Unknown')}
                                     </span>
 
                                     <span className={`priority-badge ${task.priority === 'urgent' ? 'bg-red-100 text-red-800' :
@@ -217,14 +223,14 @@ const TaskDetailPage: React.FC = () => {
                                             task.priority === 'medium' ? 'priority-medium' :
                                                 'priority-low'
                                         }`}>
-                                        {task.priority}
+                                        {task.priority || 'Unknown'}
                                     </span>
                                 </div>
                             </div>
 
                             <div className="mt-6">
                                 <h2 className="text-sm font-medium text-gray-500">Description</h2>
-                                <p className="mt-2 text-gray-700 whitespace-pre-line">{task.description}</p>
+                                <p className="mt-2 text-gray-700 whitespace-pre-line">{task.description || 'No description provided'}</p>
                             </div>
 
                             <div className="grid grid-cols-1 gap-4 mt-6 sm:grid-cols-2">
@@ -251,7 +257,7 @@ const TaskDetailPage: React.FC = () => {
                                     <h2 className="text-sm font-medium text-gray-500">Assigned To</h2>
                                     <div className="flex items-center mt-2">
                                         <UserCircleIcon className="w-5 h-5 mr-2 text-gray-400" />
-                                        <p className="text-gray-700">{task.assignedTo.name}</p>
+                                        <p className="text-gray-700">{task.assignedTo?.name || 'Unassigned'}</p>
                                     </div>
                                 </div>
 
@@ -259,7 +265,7 @@ const TaskDetailPage: React.FC = () => {
                                     <h2 className="text-sm font-medium text-gray-500">Created By</h2>
                                     <div className="flex items-center mt-2">
                                         <UserCircleIcon className="w-5 h-5 mr-2 text-gray-400" />
-                                        <p className="text-gray-700">{task.createdBy.name}</p>
+                                        <p className="text-gray-700">{task.createdBy?.name || 'Unknown'}</p>
                                     </div>
                                 </div>
 
@@ -296,7 +302,9 @@ const TaskDetailPage: React.FC = () => {
                                         <div className="flex items-center mt-2">
                                             <ArrowPathIcon className="w-5 h-5 mr-2 text-gray-400" />
                                             <p className="text-gray-700">
-                                                {task.recurringPattern.charAt(0).toUpperCase() + task.recurringPattern.slice(1)}
+                                                {task.recurringPattern ?
+                                                    task.recurringPattern.charAt(0).toUpperCase() + task.recurringPattern.slice(1) :
+                                                    'Recurring'}
                                                 {task.recurringEndDate && ` (Until ${formatDate(task.recurringEndDate)})`}
                                             </p>
                                         </div>
@@ -325,15 +333,15 @@ const TaskDetailPage: React.FC = () => {
 
                             <Formik
                                 initialValues={{
-                                    title: task.title,
-                                    description: task.description,
-                                    status: task.status,
-                                    priority: task.priority,
-                                    dueDate: task.dueDate.split('T')[0], // Format date for input
-                                    isRecurring: task.isRecurring,
-                                    recurringPattern: task.recurringPattern,
+                                    title: task.title || '',
+                                    description: task.description || '',
+                                    status: task.status || 'todo',
+                                    priority: task.priority || 'medium',
+                                    dueDate: task.dueDate ? task.dueDate.split('T')[0] : '', // Format date for input
+                                    isRecurring: task.isRecurring || false,
+                                    recurringPattern: task.recurringPattern || 'none',
                                     recurringEndDate: task.recurringEndDate ? task.recurringEndDate.split('T')[0] : '',
-                                    assignedTo: task.assignedTo._id
+                                    assignedTo: task.assignedTo?._id || ''
                                 }}
                                 validationSchema={TaskUpdateSchema}
                                 onSubmit={handleUpdateTask}
